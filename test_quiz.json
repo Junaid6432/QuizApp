@@ -1,0 +1,12 @@
+[
+  {
+    "question": "What is 10 + 20?",
+    "options": ["10", "20", "30", "40"],
+    "answer": "30"
+  },
+  {
+    "question": "Which animal is known as the King of the Jungle?",
+    "options": ["Elephant", "Tiger", "Lion", "Giraffe"],
+    "answer": "Lion"
+  }
+]

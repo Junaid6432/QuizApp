@@ -1,0 +1,7 @@
+[
+  {
+    "question": "The determinant of $\\begin{bmatrix} a & b \\\\ c & d \\end{bmatrix}$ is?",
+    "options": ["ad + bc", "ab - cd", "ad - bc", "cd - ab"],
+    "answer": "ad - bc"
+  }
+]
