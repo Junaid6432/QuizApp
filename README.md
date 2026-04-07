@@ -1,16 +1,91 @@
-# React + Vite
+# 🎓 GPS Kunda Smart Quiz Portal
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A professional, mobile-first Learning Management System (LMS) and Quiz assessment platform designed for **GPS No. 4 Kunda**. This application provides a seamless experience for students to take assessments and for teachers to manage educational content.
 
-Currently, two official plugins are available:
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![React](https://img.shields.io/badge/React-19-blue?logo=react)
+![Vite](https://img.shields.io/badge/Vite-8-purple?logo=vite)
+![Tailwind](https://img.shields.io/badge/Tailwind-4-38bdf8?logo=tailwind-css)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## 🚀 Key Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 👨‍🎓 For Students
+- **Smart Portal**: Easy entry system for students to access assigned quizzes.
+- **Interactive Quiz Interface**: Clean, focused UI for taking tests with real-time feedback.
+- **Math & Science Support**: Built-in LaTeX rendering using **KaTeX** for complex mathematical formulas and scientific notations.
+- **Live Leaderboard**: Real-time rankings to encourage healthy competition among students.
+- **Animated Results**: Celebration effects with **Canvas Confetti** and detailed performance breakdowns.
 
-## Expanding the ESLint configuration
+### 👩‍🏫 For Teachers
+- **Advanced Dashboard**: Comprehensive overview of student performance and quiz analytics.
+- **Dynamic Quiz Creator**: Build quizzes with multiple-choice questions easily.
+- **Bulk Data Import**: Support for importing questions and student data via CSV using **PapaParse**.
+- **Unit Management**: Organize assessments by curriculum units and subjects.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend**: [React 19](https://reactjs.org/)
+- **Build Tool**: [Vite 8](https://vitejs.dev/)
+- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
+- **Animations**: [Framer Motion](https://www.framer.com/motion/)
+- **Icons**: [Lucide React](https://lucide.dev/)
+- **Mathematics**: [KaTeX](https://katex.org/) & [React-KaTeX](https://github.com/talyssonoc/react-katex)
+- **Data Parsing**: [PapaParse](https://www.papaparse.com/)
+- **Visual Effects**: [Canvas Confetti](https://www.npmjs.com/package/canvas-confetti)
+- **Audio**: [Use-Sound](https://github.com/joshwcomeau/use-sound)
+
+---
+
+## 📦 Installation & Setup
+
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/Junaid6432/QuizApp.git
+   cd QuizApp
+   ```
+
+2. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+
+3. **Start the development server**:
+   ```bash
+   npm run dev
+   ```
+
+4. **Build for production**:
+   ```bash
+   npm run build
+   ```
+
+---
+
+## 📂 Project Structure
+
+```text
+src/
+├── components/     # Reusable UI components (Buttons, MathText, etc.)
+├── context/        # Global state management (QuizContext)
+├── pages/          # Full-page components (Dashboard, Quiz, Leaderboard)
+├── constants/      # Static data (College/School details)
+├── utils/          # Helper functions (File handling, validation)
+└── index.css       # Global styles and Tailwind imports
+```
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! If you'd like to improve the GPS Kunda Smart Portal, please fork the repo and submit a pull request.
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+---
+Developed with ❤️ by **Junaid Ur Rehman**
