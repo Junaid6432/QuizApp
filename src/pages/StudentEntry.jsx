@@ -77,15 +77,6 @@ const StudentEntry = () => {
             // Overall: Highest percentage attempts across all
             // IMPORTANT: Clone the array before sorting to avoid mutating context state!
             results = [...attempts].sort((a, b) => (b.percentage || 0) - (a.percentage || 0));
-            
-            // Fallback to mock data ONLY for Overall if no real attempts exist at all
-            if (results.length === 0) {
-                return [
-                    { rank: 1, studentName: "Ali Ahmed", percentage: 98, timeTaken: 252, class: "9" },
-                    { rank: 2, studentName: "Fatima Noor", percentage: 95, timeTaken: 305, class: "10" },
-                    { rank: 3, studentName: "Umar Khan", percentage: 92, timeTaken: 295, class: "9" }
-                ].map((r, i) => ({ ...r, rank: i + 1 }));
-            }
         }
 
         return results.slice(0, 3).map((r, i) => ({ ...r, rank: i + 1 }));

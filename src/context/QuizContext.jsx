@@ -1,4 +1,20 @@
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
+import { 
+  subscribeToQuizzes, 
+  addQuizToDb, 
+  updateQuizInDb, 
+  deleteQuizFromDb, 
+  subscribeToAttempts, 
+  saveAttemptToDb,
+  saveStudentProfileToDb,
+  getTeacherProfile 
+} from '../lib/firestore';
+
+import { 
+  onAuthStateChanged,
+  signOut 
+} from "firebase/auth";
+import { auth } from '../lib/firebase';
 
 const QuizContext = createContext();
 
@@ -9,28 +25,72 @@ export const useQuiz = () => {
 };
 
 export const QuizProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
   const [role, setRole] = useState('student'); // 'student' | 'teacher'
   const [gameState, setGameState] = useState(() => {
+    // Initial guess from URL, but Auth state will override
     const params = new URLSearchParams(window.location.search);
     const isAdmin = params.get('admin') === 'true';
-    const isTeacher = params.get('mode')?.toLowerCase() === 'teacher';
-    
-    if (isAdmin || isTeacher) return 'dashboard';
-    
-    // Always start at student-entry for students
+    if (isAdmin) return 'dashboard';
     return 'student-entry';
   }); 
 
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const [emisCode, setEmisCode] = useState(() => localStorage.getItem('emisCode') || 'GPSK001');
 
-  // URL-based role switching
+  // Firebase Auth Listener
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const mode = params.get('mode')?.toLowerCase();
-    const isAdmin = params.get('admin')?.toLowerCase() === 'true';
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setUser(firebaseUser);
+      if (firebaseUser) {
+        setRole('teacher');
+        try {
+          // Fetch profile details (especially EMIS Code)
+          const profile = await getTeacherProfile(firebaseUser.uid);
+          if (profile?.emisCode) {
+            setEmisCode(profile.emisCode);
+            localStorage.setItem('emisCode', profile.emisCode);
+          }
+        } catch (e) {
+          console.error("Error loading teacher profile", e);
+        }
+      } else {
+        setRole('student');
+        
+        // Check URL for direct access to teacher/login
+        const params = new URLSearchParams(window.location.search);
+        const mode = params.get('mode')?.toLowerCase();
+        const isAdmin = params.get('admin')?.toLowerCase() === 'true';
+        if (mode === 'teacher' || isAdmin) {
+          setGameState('login');
+        }
+      }
 
-    if (mode === 'teacher' || isAdmin) {
-      setRole('teacher');
-      setGameState('dashboard');
+      // Automatic Redirection: If we are now logged in but still on login/signup pages, 
+      // OR if we are using the teacher/admin URL
+      setGameState(prev => {
+        const params = new URLSearchParams(window.location.search);
+        const mode = params.get('mode')?.toLowerCase();
+        const isAdmin = params.get('admin')?.toLowerCase() === 'true';
+
+        if (firebaseUser && (prev === 'login' || prev === 'signup' || mode === 'teacher' || isAdmin)) {
+          return 'dashboard';
+        }
+        return prev;
+      });
+
+      setIsLoadingAuth(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const logout = useCallback(async () => {
+    try {
+      await signOut(auth);
+      setGameState('student-entry');
+    } catch (error) {
+      console.error("Logout error", error);
     }
   }, []);
   const [currentQuiz, setCurrentQuiz] = useState(null);
@@ -51,15 +111,36 @@ export const QuizProvider = ({ children }) => {
 
   // Persistence
 
-  const [quizzes, setQuizzes] = useState(() => {
-    const saved = localStorage.getItem('quizzes');
-    return saved ? JSON.parse(saved) : [];
-  });
+  // --- Data States (Synced with Firebase) ---
+  const [quizzes, setQuizzes] = useState([]);
+  const [attempts, setAttempts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [attempts, setAttempts] = useState(() => {
-    const saved = localStorage.getItem('quiz_attempts');
-    return saved ? JSON.parse(saved) : [];
-  });
+  // Real-time Subscriptions
+  useEffect(() => {
+    const unsubscribeQuizzes = subscribeToQuizzes((data) => {
+      // Manual sort as a workaround for missing Firestore indexes
+      const sorted = [...data].sort((a, b) => (parseInt(a.order) || 0) - (parseInt(b.order) || 0));
+      setQuizzes(sorted);
+      setIsLoading(false);
+    }, emisCode);
+
+    const unsubscribeAttempts = subscribeToAttempts((data) => {
+      // Sort by timestamp desc
+      const sorted = [...data].sort((a, b) => {
+        const timeA = a.timestamp?.seconds || 0;
+        const timeB = b.timestamp?.seconds || 0;
+        return timeB - timeA;
+      });
+      setAttempts(sorted);
+    }, emisCode);
+
+    return () => {
+      unsubscribeQuizzes();
+      unsubscribeAttempts();
+    };
+  }, []);
+
 
   // Toggle Theme
   useEffect(() => {
@@ -70,65 +151,72 @@ export const QuizProvider = ({ children }) => {
     }
   }, [isDarkMode]);
 
-  // Sync to localStorage
-  useEffect(() => {
-    localStorage.setItem('quizzes', JSON.stringify(quizzes));
-  }, [quizzes]);
+  // Sync student metadata to localStorage
 
-  useEffect(() => {
-    localStorage.setItem('quiz_attempts', JSON.stringify(attempts));
-  }, [attempts]);
 
   useEffect(() => {
     if (studentData) {
       localStorage.setItem('studentData', JSON.stringify(studentData));
+      // Also sync to Firestore
+      saveStudentProfileToDb({
+        ...studentData,
+        emisCode,
+        lastActive: new Date().toISOString()
+      });
     }
-  }, [studentData]);
+  }, [studentData, emisCode]);
 
 
   const [editQuizId, setEditQuizId] = useState(null);
   const [selectedUnit, setSelectedUnit] = useState(null);
 
   // Teacher Actions
-  const addQuiz = useCallback((newQuiz) => {
-    setQuizzes((prev) => [...prev, { 
+  const addQuiz = useCallback(async (newQuiz) => {
+    await addQuizToDb({ 
       ...newQuiz, 
-      id: Date.now().toString(), 
-      createdAt: new Date().toISOString(),
+      emisCode, // Critical: Ensure multi-tenant isolation
       topicName: newQuiz.topicName || 'General Assessment',
-      order: parseInt(newQuiz.order) || 1
-    }]);
-  }, []);
-
-  const updateQuiz = useCallback((id, updatedData) => {
-    setQuizzes((prev) => prev.map(q => q.id === id ? { 
-      ...q, 
-      ...updatedData,
-      order: parseInt(updatedData.order) || q.order || 1 
-    } : q));
-  }, []);
-
-  const deleteQuiz = useCallback((id) => {
-    setQuizzes((prev) => prev.filter(q => q.id !== id));
-  }, []);
-
-  const toggleQuizActive = useCallback((id) => {
-    setQuizzes((prev) => {
-      const target = prev.find(q => q.id === id);
-      if (!target) return prev;
-
-      const newState = !target.isActive;
-
-      return prev.map(q => {
-        // If activating, deactivate all topics of DIFFERENT units for the same class+subject
-        if (newState && q.class === target.class && q.subject === target.subject && q.unit !== target.unit) {
-          return { ...q, isActive: false };
-        }
-        if (q.id === id) return { ...q, isActive: newState };
-        return q;
-      });
+      order: parseInt(newQuiz.order) || 1,
+      isActive: false
     });
+  }, [emisCode]);
+
+  const updateQuiz = useCallback(async (id, updatedData) => {
+    await updateQuizInDb(id, { 
+      ...updatedData,
+      emisCode, // Maintain isolation on update
+      order: parseInt(updatedData.order) || 1 
+    });
+  }, [emisCode]);
+
+  const deleteQuiz = useCallback(async (id) => {
+    await deleteQuizFromDb(id);
   }, []);
+
+  const toggleQuizActive = useCallback(async (id) => {
+    const target = quizzes.find(q => q.id === id);
+    if (!target) return;
+
+    const newState = !target.isActive;
+
+    // Business Logic: If activating, deactivate other units of same class/subject
+    if (newState) {
+      const othersToDeactivate = quizzes.filter(q => 
+        q.id !== id && 
+        q.class === target.class && 
+        q.subject === target.subject && 
+        q.unit !== target.unit &&
+        q.isActive === true
+      );
+
+      for (const quiz of othersToDeactivate) {
+        await updateQuizInDb(quiz.id, { isActive: false });
+      }
+    }
+
+    await updateQuizInDb(id, { isActive: newState });
+  }, [quizzes]);
+
 
   // Student Actions
   const startQuiz = useCallback((quiz) => {
@@ -186,7 +274,7 @@ export const QuizProvider = ({ children }) => {
       const totalTime = [...userAnswers, { timeTaken }].reduce((acc, curr) => acc + (curr.timeTaken || 0), 0);
       
       const newAttempt = {
-        id: Date.now().toString(),
+        emisCode,
         quizId: currentQuiz.id,
         quizTitle: `${currentQuiz.class} - ${currentQuiz.subject} (${currentQuiz.unit}: ${currentQuiz.topicName || 'General Assessment'})`,
         class: currentQuiz.class,
@@ -199,11 +287,12 @@ export const QuizProvider = ({ children }) => {
         total,
         percentage,
         timeTaken: totalTime,
-        status: percentage >= 50 ? 'PASS' : 'FAIL',
-        timestamp: new Date().toISOString()
+        status: percentage >= 50 ? 'PASS' : 'FAIL'
       };
-      setAttempts((prev) => [newAttempt, ...prev]);
+      
+      saveAttemptToDb(newAttempt);
     }
+
   }, [currentQuiz, currentIndex, score, userAnswers, studentData]);
 
 
@@ -216,7 +305,9 @@ export const QuizProvider = ({ children }) => {
 
   const value = useMemo(() => ({
     role, setRole,
+    user, logout, isLoadingAuth, emisCode,
     gameState, setGameState,
+    isLoading,
     quizzes, addQuiz, updateQuiz, deleteQuiz, toggleQuizActive,
     editQuizId, setEditQuizId,
     selectedUnit, setSelectedUnit,
@@ -226,7 +317,8 @@ export const QuizProvider = ({ children }) => {
     currentIndex, score, userAnswers,
     isDarkMode, setIsDarkMode,
     submitAnswer, restart
-  }), [role, gameState, quizzes, addQuiz, updateQuiz, deleteQuiz, toggleQuizActive, editQuizId, selectedUnit, studentData, attempts, currentQuiz, startQuiz, currentIndex, score, userAnswers, isDarkMode, submitAnswer, restart]);
+  }), [role, gameState, isLoading, quizzes, addQuiz, updateQuiz, deleteQuiz, toggleQuizActive, editQuizId, selectedUnit, studentData, attempts, currentQuiz, startQuiz, currentIndex, score, userAnswers, isDarkMode, submitAnswer, restart]);
+
 
 
   return <QuizContext.Provider value={value}>{children}</QuizContext.Provider>;

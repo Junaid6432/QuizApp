@@ -5,7 +5,7 @@ import { CLASSES, getSubjectsByClass } from '../constants/collegeData';
 import { Trophy, ChevronLeft, Filter, Search, Award, Clock, Star } from 'lucide-react';
 
 const Leaderboard = () => {
-    const { attempts, setGameState, quizzes, studentData } = useQuiz();
+    const { role, attempts, setGameState, quizzes, studentData } = useQuiz();
     const [filters, setFilters] = useState({
         grade: studentData?.grade || '',
         subject: studentData?.subject || '',
@@ -13,20 +13,17 @@ const Leaderboard = () => {
         topic: ''
     });
 
-    // Mock initial data to populate the global leaderboard if no real attempts exist
-    const globalMockData = [
-        { studentName: "Ali Ahmed", rollNo: "101", class: "9", subject: "Maths", score: 10, total: 10, percentage: 100, timeTaken: 120, timestamp: new Date().toISOString() },
-        { studentName: "Fatima Noor", rollNo: "102", class: "10", subject: "Biology", score: 9, total: 10, percentage: 90, timeTaken: 145, timestamp: new Date().toISOString() },
-        { studentName: "Umar Khan", rollNo: "103", class: "8", subject: "Science", score: 9, total: 10, percentage: 90, timeTaken: 180, timestamp: new Date().toISOString() },
-        { studentName: "Zainab Bibi", rollNo: "104", class: "9", subject: "English", score: 8, total: 10, percentage: 80, timeTaken: 110, timestamp: new Date().toISOString() },
-        { studentName: "Hassan Ali", rollNo: "105", class: "7", subject: "Maths", score: 8, total: 10, percentage: 80, timeTaken: 130, timestamp: new Date().toISOString() }
-    ];
+    const handleBack = () => {
+        if (role === 'teacher') {
+            setGameState('dashboard');
+        } else {
+            setGameState(studentData ? 'home' : 'student-entry');
+        }
+    };
 
     const allAttempts = useMemo(() => {
-        // Merge real attempts with mock data (mock data only if very few real attempts exist or just for demo)
-        const combined = [...attempts];
-        if (combined.length < 3) combined.push(...globalMockData);
-        return combined;
+        // Exclusively use real attempts from Firestore
+        return [...attempts];
     }, [attempts]);
 
     // Dynamic Filter Options
@@ -76,7 +73,7 @@ const Leaderboard = () => {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
                 <div className="flex items-center gap-4">
                     <button 
-                        onClick={() => setGameState(studentData ? 'home' : 'student-entry')}
+                        onClick={handleBack}
                         className="p-3 rounded-2xl bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 transition-all shadow-xl"
                     >
                         <ChevronLeft className="w-6 h-6" />

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useQuiz } from '../context/QuizContext';
-import { Plus, Trash2, Edit2, Power, ClipboardList, TrendingUp, ChevronRight, ArrowLeft } from 'lucide-react';
+import { Plus, Trash2, Edit2, Power, ClipboardList, TrendingUp, ChevronRight, ArrowLeft, Trophy, Users } from 'lucide-react';
 import { CLASSES, BASE_SUBJECTS, HIGH_SCHOOL_SUBJECTS, getSubjectsByClass } from '../constants/collegeData';
 import GlassCard from '../components/ui/GlassCard';
 import Button from '../components/ui/Button';
@@ -10,8 +10,17 @@ const TeacherDashboard = () => {
   const { 
     quizzes, toggleQuizActive, deleteQuiz, 
     setGameState, setRole, attempts,
-    setEditQuizId
+    setEditQuizId, isLoading
   } = useQuiz();
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-primary-500/20 border-t-primary-500 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   const [filter, setFilter] = useState({ class: '', subject: '' });
 
   const handleEdit = (quiz) => {
@@ -47,11 +56,20 @@ const TeacherDashboard = () => {
           </div>
         </div>
         <div className="flex gap-3 w-full md:w-auto">
+          <Button 
+            variant="outline" 
+            onClick={() => setGameState('leaderboard')} 
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 py-3 px-6 border-white/10 hover:border-white/20"
+          >
+            <Trophy className="w-5 h-5 text-yellow-500" />
+            Rankings
+          </Button>
           <Button onClick={() => setGameState('create-quiz')} className="flex-1 md:flex-none flex items-center justify-center gap-2 py-3 px-6 shadow-xl">
             <Plus className="w-5 h-5" />
             Create Quiz
           </Button>
           <Button variant="outline" onClick={() => setGameState('home')} className="flex-1 md:flex-none flex items-center justify-center gap-2 py-3 px-6 border-white/10 hover:border-white/20">
+            <Users className="w-5 h-5 text-emerald-500" />
             Student View
           </Button>
         </div>
@@ -77,14 +95,18 @@ const TeacherDashboard = () => {
             <p className="text-2xl font-bold text-white">{quizzes.filter(q => q.isActive).length}</p>
           </div>
         </GlassCard>
-        <GlassCard className="p-6 flex items-center gap-4">
-          <div className="p-3 bg-amber-500/20 rounded-xl text-amber-500">
+        <GlassCard 
+          onClick={() => setGameState('leaderboard')}
+          className="p-6 flex items-center gap-4 cursor-pointer hover:bg-white/5 transition-all group"
+        >
+          <div className="p-3 bg-amber-500/20 rounded-xl text-amber-500 group-hover:scale-110 transition-transform">
             <TrendingUp className="w-6 h-6" />
           </div>
-          <div>
+          <div className="flex-1">
             <p className="text-sm text-slate-400">Student Attempts</p>
             <p className="text-2xl font-bold text-white">{attempts.length}</p>
           </div>
+          <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-amber-500 group-hover:translate-x-1 transition-all" />
         </GlassCard>
       </div>
 

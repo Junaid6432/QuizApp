@@ -7,7 +7,16 @@ import { Trophy, Compass, CheckCircle2, AlertCircle, Users, GraduationCap, Zap, 
 import { CLASSES, getSubjectsByClass } from '../constants/collegeData';
 
 const Home = () => {
-  const { quizzes, setGameState, setSelectedUnit, attempts, studentData } = useQuiz();
+  const { quizzes, setGameState, setSelectedUnit, attempts, studentData, isLoading } = useQuiz();
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-premium-gradient">
+        <div className="w-12 h-12 border-4 border-primary-500/20 border-t-primary-500 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   const [selection, setSelection] = useState({ class: '', subject: '' });
 
   // Sync selection with student data on mount/change

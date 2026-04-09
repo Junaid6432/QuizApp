@@ -1,7 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import { QuizProvider, useQuiz } from './context/QuizContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Moon, Sun, GraduationCap, Users, Settings, UserCircle } from 'lucide-react';
+import { Moon, Sun, GraduationCap, Users, Settings, UserCircle, LogOut } from 'lucide-react';
 
 
 // Lazy load pages for performance
@@ -13,13 +13,35 @@ const TeacherDashboard = lazy(() => import('./pages/TeacherDashboard'));
 const QuizCreator = lazy(() => import('./pages/QuizCreator'));
 const StudentEntry = lazy(() => import('./pages/StudentEntry'));
 const Leaderboard = lazy(() => import('./pages/Leaderboard'));
+const Login = lazy(() => import('./pages/Login'));
+const Signup = lazy(() => import('./pages/Signup'));
 
 
 
 const Layout = () => {
-  const { role, gameState, setGameState, isDarkMode, setIsDarkMode } = useQuiz();
+  const { role, gameState, setGameState, isDarkMode, setIsDarkMode, isLoadingAuth, logout } = useQuiz();
+
+  if (isLoadingAuth) {
+    return (
+      <div className="min-h-screen bg-premium-gradient flex items-center justify-center">
+        <motion.div 
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+          className="w-12 h-12 border-4 border-primary-500/20 border-t-primary-500 rounded-full" 
+        />
+      </div>
+    );
+  }
 
   const renderContent = () => {
+    if (gameState === 'login') return <Login />;
+    if (gameState === 'signup') return <Signup />;
+    
+    // Protected Routes
+    if (['dashboard', 'create-quiz'].includes(gameState) && role !== 'teacher') {
+       return <Login />;
+    }
+
     if (gameState === 'quiz') return <Quiz />;
     if (gameState === 'result') return <Result />;
     if (gameState === 'unit-detail') return <UnitDetail />;
@@ -66,19 +88,31 @@ const Layout = () => {
             </button>
           )}
 
-          {gameState === 'student-entry' && (
-            <button className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:bg-white/10 hover:text-white transition-all shadow-xl backdrop-blur-md">
-              <Settings className="w-5 h-5" />
-            </button>
-          )}
+          {role === 'teacher' ? (
+             <button 
+               onClick={logout}
+               title="Logout"
+               className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500/20 transition-all shadow-xl backdrop-blur-md"
+             >
+                <LogOut className="w-5 h-5" />
+             </button>
+          ) : (
+            <>
+              {gameState === 'student-entry' && (
+                <button className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:bg-white/10 hover:text-white transition-all shadow-xl backdrop-blur-md">
+                  <Settings className="w-5 h-5" />
+                </button>
+              )}
 
-          <button 
-            onClick={() => setGameState('student-entry')}
-            title="Update Profile"
-            className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 hover:text-white transition-all shadow-xl backdrop-blur-md"
-          >
-            <UserCircle className="w-5 h-5" />
-          </button>
+              <button 
+                onClick={() => setGameState('student-entry')}
+                title="Update Profile"
+                className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 hover:text-white transition-all shadow-xl backdrop-blur-md"
+              >
+                <UserCircle className="w-5 h-5" />
+              </button>
+            </>
+          )}
         </div>
       </header>
 
