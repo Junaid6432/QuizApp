@@ -144,7 +144,7 @@ export const QuizProvider = ({ children }) => {
       unsubscribeQuizzes();
       unsubscribeAttempts();
     };
-  }, []);
+  }, [emisCode]);
 
 
   // Toggle Theme
