@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useQuiz } from '../context/QuizContext';
-import { Plus, Trash2, Edit2, Power, ClipboardList, TrendingUp, ChevronRight, ArrowLeft, Trophy, Users } from 'lucide-react';
+import { Plus, Trash2, Edit2, Power, ClipboardList, TrendingUp, ChevronRight, ArrowLeft, Trophy, Users, School, Hash } from 'lucide-react';
 import { CLASSES, BASE_SUBJECTS, HIGH_SCHOOL_SUBJECTS, getSubjectsByClass } from '../constants/collegeData';
 import GlassCard from '../components/ui/GlassCard';
 import Button from '../components/ui/Button';
@@ -10,7 +10,7 @@ const TeacherDashboard = () => {
   const { 
     quizzes, toggleQuizActive, deleteQuiz, 
     setGameState, setRole, attempts,
-    setEditQuizId, isLoading
+    setEditQuizId, isLoading, emisCode
   } = useQuiz();
 
   if (isLoading) {
@@ -52,7 +52,14 @@ const TeacherDashboard = () => {
           </button>
           <div>
             <h1 className="text-3xl font-black text-white tracking-tight">Teacher Dashboard</h1>
-            <p className="text-slate-500 font-medium tracking-tight">Manage your unit quizzes and track performance</p>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-slate-500 font-medium tracking-tight">Manage your unit quizzes and track performance</p>
+              <span className="w-1 h-1 bg-slate-700 rounded-full" />
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20">
+                <School className="w-3 h-3 text-blue-400" />
+                <span className="text-[10px] font-black text-blue-400 uppercase tracking-wider">School: {emisCode}</span>
+              </div>
+            </div>
           </div>
         </div>
         <div className="flex gap-3 w-full md:w-auto">

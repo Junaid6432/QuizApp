@@ -310,7 +310,7 @@ export const QuizProvider = ({ children }) => {
 
   const value = useMemo(() => ({
     role, setRole,
-    user, logout, isLoadingAuth, emisCode, isFirebaseConfigured,
+    user, logout, isLoadingAuth, emisCode, setEmisCode, isFirebaseConfigured,
     gameState, setGameState,
     isLoading,
     quizzes, addQuiz, updateQuiz, deleteQuiz, toggleQuizActive,
@@ -322,7 +322,7 @@ export const QuizProvider = ({ children }) => {
     currentIndex, score, userAnswers,
     isDarkMode, setIsDarkMode,
     submitAnswer, restart
-  }), [role, gameState, isLoading, quizzes, addQuiz, updateQuiz, deleteQuiz, toggleQuizActive, editQuizId, selectedUnit, studentData, attempts, currentQuiz, startQuiz, currentIndex, score, userAnswers, isDarkMode, submitAnswer, restart, isFirebaseConfigured]);
+  }), [role, gameState, isLoading, quizzes, addQuiz, updateQuiz, deleteQuiz, toggleQuizActive, editQuizId, selectedUnit, studentData, attempts, currentQuiz, startQuiz, currentIndex, score, userAnswers, isDarkMode, submitAnswer, restart, isFirebaseConfigured, emisCode]);
 
 
 

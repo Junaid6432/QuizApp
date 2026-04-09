@@ -1,18 +1,19 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuiz } from '../context/QuizContext';
 import { CLASSES, getSubjectsByClass } from '../constants/collegeData';
-import { Trophy, Sparkles, ChevronRight } from 'lucide-react';
+import { Trophy, Sparkles, ChevronRight, School, Hash, UserCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 
 const StudentEntry = () => {
-    const { setGameState, setSelectedUnit, setStudentData, attempts } = useQuiz();
+    const { setGameState, setSelectedUnit, setStudentData, attempts, emisCode, setEmisCode } = useQuiz();
 
     const [formData, setFormData] = useState({
         studentName: '',
         rollNo: '',
         grade: CLASSES[0] || '9',
-        subject: ''
+        subject: '',
+        emisCode: emisCode || 'GPSK001'
     });
 
     const [isGradeTouched, setIsGradeTouched] = useState(false);
@@ -42,6 +43,13 @@ const StudentEntry = () => {
             setFormData(prev => ({ ...prev, subject: subjects[0] || '' }));
         }
     }, [formData.grade, subjects]);
+
+    // Update global context when EMIS in form changes (or at least when starting)
+    useEffect(() => {
+        if (formData.emisCode !== emisCode) {
+            setEmisCode(formData.emisCode);
+        }
+    }, [formData.emisCode]);
 
     const handleStart = () => {
         const { studentName, rollNo, grade, subject } = formData;
@@ -162,6 +170,27 @@ const StudentEntry = () => {
                                         ))}
                                     </select>
                                 </div>
+                            </div>
+
+                            <div className="pt-2">
+                                <label className="block text-[12px] font-bold text-blue-400/80 mb-2 uppercase tracking-widest flex items-center gap-2">
+                                    <Hash className="w-3 h-3" />
+                                    School / EMIS Code
+                                </label>
+                                <div className="relative">
+                                    <School className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                                    <input 
+                                        type="text" 
+                                        placeholder="e.g. GPSK001" 
+                                        value={formData.emisCode}
+                                        onChange={(e) => setFormData({ ...formData, emisCode: e.target.value.toUpperCase() })}
+                                        className="w-full bg-[#0f172a] border border-blue-500/30 rounded-2xl pl-11 pr-5 py-4 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold placeholder:text-slate-600 focus:brightness-110"
+                                    />
+                                    <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                                        <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse" />
+                                    </div>
+                                </div>
+                                <p className="text-[10px] text-slate-500 mt-2 italic px-1">Tip: Ask your teacher for the school code to see your tests.</p>
                             </div>
 
                             <button 
