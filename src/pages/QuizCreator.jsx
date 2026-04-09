@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuiz } from '../context/QuizContext';
 import { parseFile } from '../utils/fileUtils';
-import { Upload, X, CheckCircle2, AlertCircle, Save, ArrowLeft, Trash2, Brain, Sparkles, FileText, ImageIcon } from 'lucide-react';
+import { Upload, X, CheckCircle2, AlertCircle, Save, ArrowLeft, Trash2, Brain, Sparkles, FileText, ImageIcon, Database, CloudCog } from 'lucide-react';
 import { generateMCQsFromMaterial } from '../lib/gemini';
 import GlassCard from '../components/ui/GlassCard';
 import Button from '../components/ui/Button';
@@ -497,9 +497,58 @@ const QuizCreator = () => {
               animate={{ opacity: 1, y: 0 }}
               className="mt-8 text-center"
             >
-              <h4 className="text-2xl font-black text-white mb-2">Gemini AI is Processing...</h4>
+              <h4 className="text-2xl font-black text-white mb-2 tracking-tight uppercase">Gemini AI is Processing...</h4>
               <p className="text-slate-400 font-medium">Scanning your content and building high-quality MCQs</p>
             </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Loading Overlay for Saving */}
+      <AnimatePresence>
+        {isSaving && (
+          <div className="fixed inset-0 z-[120] flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-md">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="relative mb-10"
+            >
+              {/* Outer Glow Circles */}
+              <div className="absolute inset-0 m-auto w-32 h-32 bg-emerald-500/20 rounded-full blur-2xl animate-pulse" />
+              <div className="absolute inset-0 m-auto w-20 h-20 bg-blue-500/20 rounded-full blur-xl animate-pulse delay-75" />
+              
+              {/* Main Spinner */}
+              <div className="w-28 h-28 border-[3px] border-emerald-500/10 border-t-emerald-500 rounded-full animate-spin" />
+              
+              <div className="absolute inset-0 m-auto w-12 h-12 flex items-center justify-center">
+                <Database className="w-10 h-10 text-emerald-500 animate-bounce" />
+              </div>
+            </motion.div>
+
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center space-y-3"
+            >
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-[0.3em] mb-4">
+                <CloudCog className="w-3.6 h-3.6 animate-spin" style={{ animationDuration: '3s' }} />
+                Secure Cloud Sync
+              </div>
+              <h4 className="text-4xl font-black text-white tracking-tighter">Saving Assessment</h4>
+              <p className="text-slate-400 font-medium max-w-xs mx-auto text-sm leading-relaxed">
+                Finalizing quiz structure and syncing metadata with the secure portal cloud...
+              </p>
+            </motion.div>
+            
+            {/* Minimal Progress Indicator */}
+            <div className="absolute bottom-12 w-48 h-1 bg-white/5 rounded-full overflow-hidden">
+                <motion.div 
+                    initial={{ x: '-100%' }}
+                    animate={{ x: '100%' }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                    className="w-full h-full bg-gradient-to-r from-transparent via-emerald-500 to-transparent"
+                />
+            </div>
           </div>
         )}
       </AnimatePresence>
