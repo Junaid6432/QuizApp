@@ -2,8 +2,7 @@ import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuiz } from '../context/QuizContext';
 import { parseFile } from '../utils/fileUtils';
-import { Upload, X, CheckCircle2, AlertCircle, Save, ArrowLeft, Trash2, Brain, Sparkles, FileText, ImageIcon, Database, CloudCog } from 'lucide-react';
-import { generateMCQsFromMaterial } from '../lib/gemini';
+import { Upload, X, CheckCircle2, AlertCircle, Save, ArrowLeft, Trash2, Database, CloudCog } from 'lucide-react';
 import GlassCard from '../components/ui/GlassCard';
 import Button from '../components/ui/Button';
 import { CLASSES, getSubjectsByClass } from '../constants/collegeData';
@@ -27,10 +26,7 @@ const QuizCreator = () => {
   const [questions, setQuestions] = useState([]);
   const [error, setError] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
-  const [aiModalOpen, setAIModalOpen] = useState(false);
   const fileInputRef = useRef(null);
-  const aiFileInputRef = useRef(null);
 
   // Load existing quiz if in edit mode
   React.useEffect(() => {
@@ -73,38 +69,6 @@ const QuizCreator = () => {
     }
   };
 
-  const handleAIFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    setIsGeneratingAI(true);
-    setError(null);
-    setAIModalOpen(false);
-
-    try {
-      // Convert file to Base64
-      const reader = new FileReader();
-      const base64Promise = new Promise((resolve) => {
-        reader.onload = () => {
-          const base64 = reader.result.split(',')[1];
-          resolve(base64);
-        };
-        reader.readAsDataURL(file);
-      });
-
-      const base64Data = await base64Promise;
-      const generatedMCQs = await generateMCQsFromMaterial(base64Data, file.type);
-      
-      setQuestions(prev => [...prev, ...generatedMCQs]);
-      setError(null);
-    } catch (err) {
-      console.error('AI Generation error:', err);
-      setError(err?.message || 'AI failed to process the material. Please check your API key.');
-    } finally {
-      setIsGeneratingAI(false);
-      if (aiFileInputRef.current) aiFileInputRef.current.value = '';
-    }
-  };
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -315,27 +279,6 @@ const QuizCreator = () => {
               <h2 className="text-xl font-bold text-white">Questions Content</h2>
               
               <div className="flex gap-3 text-white">
-                <input 
-                  type="file" 
-                  className="hidden" 
-                  ref={aiFileInputRef} 
-                  onChange={handleAIFileUpload} 
-                  accept="image/*,.pdf"
-                />
-                <Button 
-                  variant="primary" 
-                  onClick={() => setAIModalOpen(true)}
-                  className="py-2 px-4 text-sm flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 border-none relative overflow-hidden group shadow-lg shadow-blue-500/20"
-                  disabled={isGeneratingAI}
-                >
-                  <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-                  {isGeneratingAI ? (
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    <Sparkles className="w-4 h-4 animate-pulse" />
-                  )}
-                  <span className="relative z-10">{isGeneratingAI ? 'AI Scanning...' : 'AI Auto-Generate'}</span>
-                </Button>
 
                 <input 
                   type="file" 
@@ -424,85 +367,6 @@ const QuizCreator = () => {
           </GlassCard>
         </div>
       </div>
-      {/* AI Upload Modal */}
-      <AnimatePresence>
-        {aiModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="w-full max-w-lg bg-slate-900 border border-white/10 rounded-3xl p-8 shadow-2xl relative"
-            >
-              <button 
-                onClick={() => setAIModalOpen(false)}
-                className="absolute top-6 right-6 p-2 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white transition-all"
-              >
-                <X className="w-5 h-5" />
-              </button>
-
-              <div className="flex flex-col items-center text-center space-y-6">
-                <div className="w-20 h-20 bg-blue-500/10 rounded-full flex items-center justify-center border border-blue-500/20">
-                  <Brain className="w-10 h-10 text-blue-500" />
-                </div>
-                
-                <div className="space-y-2 text-white">
-                  <h3 className="text-2xl font-bold">AI-Powered MCQ Generator</h3>
-                  <p className="text-slate-400">Upload a photo of your book page or a PDF. Gemini AI will automatically extract text and generate MCQs for you.</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 w-full">
-                  <button 
-                    onClick={() => aiFileInputRef.current?.click()}
-                    className="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all group"
-                  >
-                    <ImageIcon className="w-8 h-8 text-blue-400 group-hover:scale-110 transition-transform" />
-                    <span className="text-sm font-bold text-white tracking-tight">Post Book Image</span>
-                  </button>
-                  <button 
-                    onClick={() => aiFileInputRef.current?.click()}
-                    className="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-indigo-500/50 hover:bg-indigo-500/5 transition-all group"
-                  >
-                    <FileText className="w-8 h-8 text-indigo-400 group-hover:scale-110 transition-transform" />
-                    <span className="text-sm font-bold text-white tracking-tight">Upload PDF File</span>
-                  </button>
-                </div>
-
-                <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-xl flex items-start gap-3 text-left">
-                  <Sparkles className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
-                  <p className="text-xs text-blue-300 leading-relaxed font-medium">
-                    Pro Tip: Ensure the image is clear and the text is readable for best results. Supports Math and Urdu content.
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Loading Overlay for AI */}
-      <AnimatePresence>
-        {isGeneratingAI && (
-          <div className="fixed inset-0 z-[110] flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="relative"
-            >
-              <div className="w-24 h-24 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
-              <Brain className="absolute inset-0 m-auto w-10 h-10 text-blue-500 animate-pulse" />
-            </motion.div>
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-8 text-center"
-            >
-              <h4 className="text-2xl font-black text-white mb-2 tracking-tight uppercase">Gemini AI is Processing...</h4>
-              <p className="text-slate-400 font-medium">Scanning your content and building high-quality MCQs</p>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       {/* Loading Overlay for Saving */}
       <AnimatePresence>
