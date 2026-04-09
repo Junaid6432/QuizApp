@@ -6,7 +6,7 @@ import { LogIn, Lock, Mail, AlertCircle, ChevronLeft, Eye, EyeOff } from 'lucide
 import { motion } from 'framer-motion';
 
 const Login = () => {
-    const { setGameState, setRole } = useQuiz();
+    const { setGameState, setRole, isFirebaseConfigured } = useQuiz();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -73,6 +73,18 @@ const Login = () => {
                     </div>
 
                     <form onSubmit={handleLogin} className="space-y-6 relative z-10">
+                        {!isFirebaseConfigured && (
+                            <div className="bg-amber-500/10 border border-amber-500/20 text-amber-500 p-4 rounded-2xl flex flex-col gap-2 text-sm font-medium">
+                                <div className="flex items-center gap-3">
+                                    <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                                    <span>Backend Not Connected</span>
+                                </div>
+                                <p className="text-[10px] opacity-70 leading-relaxed">
+                                    Please add VITE_FIREBASE_* environment variables in Vercel to enable Login.
+                                </p>
+                            </div>
+                        )}
+
                         {error && (
                             <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-2xl flex items-center gap-3 text-sm font-medium">
                                 <AlertCircle className="w-5 h-5 flex-shrink-0" />
@@ -137,7 +149,8 @@ const Login = () => {
                         <button 
                             type="button"
                             onClick={handleGoogleLogin}
-                            className="w-full bg-white text-black font-bold py-4 rounded-2xl flex items-center justify-center gap-3 hover:bg-slate-100 transition-all active:scale-[0.98] shadow-xl"
+                            disabled={loading || !isFirebaseConfigured}
+                            className="w-full bg-white text-black font-bold py-4 rounded-2xl flex items-center justify-center gap-3 hover:bg-slate-100 transition-all active:scale-[0.98] shadow-xl disabled:opacity-50"
                         >
                             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" alt="Google" />
                             Sign in with Google

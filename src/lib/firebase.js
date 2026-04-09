@@ -32,4 +32,4 @@ if (isFirebaseConfigured) {
   console.warn("Firebase configuration is missing! Ensure VITE_FIREBASE_API_KEY and VITE_FIREBASE_PROJECT_ID are set.");
 }
 
-export { db, auth, googleProvider };
+export { db, auth, googleProvider, isFirebaseConfigured };

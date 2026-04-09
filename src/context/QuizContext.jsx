@@ -14,7 +14,7 @@ import {
   onAuthStateChanged,
   signOut 
 } from "firebase/auth";
-import { auth } from '../lib/firebase';
+import { auth, isFirebaseConfigured } from '../lib/firebase';
 
 const QuizContext = createContext();
 
@@ -40,6 +40,11 @@ export const QuizProvider = ({ children }) => {
 
   // Firebase Auth Listener
   useEffect(() => {
+    if (!auth) {
+      setIsLoadingAuth(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
@@ -305,7 +310,7 @@ export const QuizProvider = ({ children }) => {
 
   const value = useMemo(() => ({
     role, setRole,
-    user, logout, isLoadingAuth, emisCode,
+    user, logout, isLoadingAuth, emisCode, isFirebaseConfigured,
     gameState, setGameState,
     isLoading,
     quizzes, addQuiz, updateQuiz, deleteQuiz, toggleQuizActive,
@@ -317,7 +322,7 @@ export const QuizProvider = ({ children }) => {
     currentIndex, score, userAnswers,
     isDarkMode, setIsDarkMode,
     submitAnswer, restart
-  }), [role, gameState, isLoading, quizzes, addQuiz, updateQuiz, deleteQuiz, toggleQuizActive, editQuizId, selectedUnit, studentData, attempts, currentQuiz, startQuiz, currentIndex, score, userAnswers, isDarkMode, submitAnswer, restart]);
+  }), [role, gameState, isLoading, quizzes, addQuiz, updateQuiz, deleteQuiz, toggleQuizActive, editQuizId, selectedUnit, studentData, attempts, currentQuiz, startQuiz, currentIndex, score, userAnswers, isDarkMode, submitAnswer, restart, isFirebaseConfigured]);
 
 
 

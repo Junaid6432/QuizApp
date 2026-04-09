@@ -17,6 +17,10 @@ import { db } from "./firebase";
 // --- Quizzes ---
 
 export const subscribeToQuizzes = (callback, emisCode) => {
+  if (!db) {
+    callback([]);
+    return () => {};
+  }
   let q = query(collection(db, "quizzes"));
   
   if (emisCode) {
@@ -39,6 +43,7 @@ export const subscribeToQuizzes = (callback, emisCode) => {
  * @param {Object} quizData 
  */
 export const addQuizToDb = async (quizData) => {
+  if (!db) throw new Error("Database not connected");
   try {
     const docRef = await addDoc(collection(db, "quizzes"), {
       ...quizData,
@@ -57,6 +62,7 @@ export const addQuizToDb = async (quizData) => {
  * @param {Object} updatedData 
  */
 export const updateQuizInDb = async (id, updatedData) => {
+  if (!db) throw new Error("Database not connected");
   try {
     const docRef = doc(db, "quizzes", id);
     await updateDoc(docRef, updatedData);
@@ -71,6 +77,7 @@ export const updateQuizInDb = async (id, updatedData) => {
  * @param {string} id 
  */
 export const deleteQuizFromDb = async (id) => {
+  if (!db) throw new Error("Database not connected");
   try {
     await deleteDoc(doc(db, "quizzes", id));
   } catch (error) {
@@ -82,6 +89,10 @@ export const deleteQuizFromDb = async (id) => {
 // --- Attempts ---
 
 export const subscribeToAttempts = (callback, emisCode) => {
+  if (!db) {
+    callback([]);
+    return () => {};
+  }
   let q = query(collection(db, "attempts"));
 
   if (emisCode) {
@@ -104,6 +115,7 @@ export const subscribeToAttempts = (callback, emisCode) => {
  * @param {Object} attemptData 
  */
 export const saveAttemptToDb = async (attemptData) => {
+  if (!db) return null;
   try {
     const docRef = await addDoc(collection(db, "attempts"), {
       ...attemptData,
@@ -121,8 +133,7 @@ export const saveAttemptToDb = async (attemptData) => {
  * @param {Object} studentData 
  */
 export const saveStudentProfileToDb = async (studentData) => {
-  if (!studentData.rollNo || !studentData.studentName) return;
-  
+  if (!db || !studentData.rollNo || !studentData.studentName) return;
   try {
     const docId = `${studentData.emisCode || 'GLOBAL'}_${studentData.rollNo}`;
     const docRef = doc(db, "students", docId);
@@ -141,6 +152,7 @@ export const saveStudentProfileToDb = async (studentData) => {
  * @param {Object} teacherData 
  */
 export const saveTeacherProfileToDb = async (uid, teacherData) => {
+  if (!db) return;
   try {
     const docRef = doc(db, "teachers", uid);
     await setDoc(docRef, {
@@ -158,6 +170,7 @@ export const saveTeacherProfileToDb = async (uid, teacherData) => {
  * @param {string} uid 
  */
 export const getTeacherProfile = async (uid) => {
+  if (!db) return null;
   try {
     const docRef = doc(db, "teachers", uid);
     const docSnap = await getDoc(docRef);
