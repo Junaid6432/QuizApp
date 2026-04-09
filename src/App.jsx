@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from 'react';
 import { QuizProvider, useQuiz } from './context/QuizContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Moon, Sun, GraduationCap, Users, Settings, UserCircle, LogOut } from 'lucide-react';
+import ErrorBoundary from './components/ErrorBoundary';
 
 
 // Lazy load pages for performance
@@ -152,9 +153,11 @@ const Layout = () => {
 
 function App() {
   return (
-    <QuizProvider>
-      <Layout />
-    </QuizProvider>
+    <ErrorBoundary>
+      <QuizProvider>
+        <Layout />
+      </QuizProvider>
+    </ErrorBoundary>
   );
 }
 
