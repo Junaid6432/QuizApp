@@ -15,11 +15,8 @@ export const generateMCQsFromMaterial = async (base64Data, mimeType) => {
       throw new Error("Gemini API Key is missing. Please add VITE_GEMINI_API_KEY to your .env file.");
     }
 
-    // Use gemini-1.5-flash on the stable v1 API
-    const model = genAI.getGenerativeModel(
-      { model: "gemini-1.5-flash" },
-      { apiVersion: "v1" }
-    );
+    // Use gemini-1.5-flash
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const prompt = `
       You are an expert educational content creator. I have uploaded material from a textbook.
