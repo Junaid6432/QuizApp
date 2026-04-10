@@ -235,11 +235,11 @@ const TeacherDashboard = () => {
                       layout 
                       className="group border-b border-white/5 hover:bg-white/5 transition-colors"
                     >
-                      <td className="px-6 py-4 pl-12">
+                      <td className="px-6 py-4 pl-14 md:pl-20">
                         <div className="flex items-start gap-4">
                           <div className="mt-1.5 flex flex-col items-center gap-1">
                             <div className="w-1.5 h-1.5 rounded-full bg-slate-700 group-hover:bg-primary-500 transition-colors" />
-                            <div className="w-px h-8 bg-slate-800" />
+                            {idx < unitQuizzes.length - 1 && <div className="w-px h-8 bg-slate-800" />}
                           </div>
                           <div>
                             <div className="font-bold flex items-center gap-2">
@@ -261,7 +261,7 @@ const TeacherDashboard = () => {
                         <div className="flex justify-center">
                           <button 
                             onClick={() => toggleQuizActive(quiz.id)}
-                            className={`px-3 py-1 rounded-full text-[10px] font-black transition-all ${
+                            className={`px-2 py-0.5 rounded-full text-[8px] font-black tracking-tighter transition-all ${
                               quiz.isActive 
                                 ? 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/30' 
                                 : 'bg-slate-500/20 text-slate-400 border border-white/10'
