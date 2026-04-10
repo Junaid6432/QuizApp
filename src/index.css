@@ -53,12 +53,25 @@
   }
 
   body {
-    @apply m-0 min-h-screen bg-premium-gradient text-slate-100 antialiased overflow-x-hidden transition-colors duration-500;
+    @apply m-0 min-h-screen bg-premium-gradient text-slate-100 antialiased overflow-x-hidden transition-colors duration-500 overflow-y-auto;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: none;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Native Mobile Selection Reset */
+  button, a, .selectable-none {
+    user-select: none;
+    -webkit-user-drag: none;
   }
 }
 
 @layer components {
+  .safe-p-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
   .glass-panel {
     @apply bg-[var(--glass-bg)] border border-[var(--glass-border)] backdrop-blur-[var(--glass-blur)] shadow-xl rounded-2xl;
   }

@@ -3,6 +3,7 @@ import { QuizProvider, useQuiz } from './context/QuizContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Moon, Sun, GraduationCap, Users, Settings, UserCircle, LogOut } from 'lucide-react';
 import ErrorBoundary from './components/ErrorBoundary';
+import MobileTabBar from './components/ui/MobileTabBar';
 
 
 // Lazy load pages for performance
@@ -58,20 +59,20 @@ const Layout = () => {
 
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden bg-premium-gradient">
+    <div className="min-h-screen flex flex-col relative overflow-hidden bg-premium-gradient safe-p-top">
       {/* Background Orbs */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-emerald-600/10 rounded-full blur-[120px] pointer-events-none" />
 
       {/* Header / Nav */}
       <header className={`p-4 flex justify-between items-center z-10 border-b border-white/5 transition-all duration-500 ${
-        gameState === 'student-entry' ? 'bg-transparent border-none py-2' : 'bg-black/5 backdrop-blur-md'
+        gameState === 'student-entry' ? 'bg-transparent border-none py-2' : 'bg-black/5 backdrop-blur-md sticky top-0 md:relative'
       }`}>
         {gameState !== 'student-entry' ? (
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => setGameState('home')}>
-            <div className="w-10 h-10 bg-accent-gradient rounded-xl flex items-center justify-center font-black text-white text-xl shadow-lg">Q</div>
+            <div className="w-9 h-9 md:w-10 md:h-10 bg-accent-gradient rounded-xl flex items-center justify-center font-black text-white text-lg shadow-lg">Q</div>
             <div className="hidden sm:block">
-              <span className="text-white font-bold text-xl tracking-tight block leading-none">GPS Kunda</span>
+              <span className="text-white font-bold text-base md:text-xl tracking-tight block leading-none">GPS Kunda</span>
               <span className="text-primary-400 text-[10px] font-black uppercase tracking-[0.2em]">Smart Portal</span>
             </div>
           </div>
@@ -98,7 +99,7 @@ const Layout = () => {
                 <LogOut className="w-5 h-5" />
              </button>
           ) : (
-            <>
+            <div className="hidden md:flex items-center gap-4">
               {gameState === 'student-entry' && (
                 <button className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:bg-white/10 hover:text-white transition-all shadow-xl backdrop-blur-md">
                   <Settings className="w-5 h-5" />
@@ -112,13 +113,13 @@ const Layout = () => {
               >
                 <UserCircle className="w-5 h-5" />
               </button>
-            </>
+            </div>
           )}
         </div>
       </header>
 
       {/* Main Content with Page Transitions */}
-      <main className="flex-1 flex flex-col relative z-20">
+      <main className="flex-1 flex flex-col relative z-20 pb-28 md:pb-6">
         <AnimatePresence mode="wait">
           <Suspense fallback={
             <div className="flex-1 flex items-center justify-center">
@@ -143,8 +144,10 @@ const Layout = () => {
         </AnimatePresence>
       </main>
 
-      {/* Footer */}
-      <footer className="p-6 text-center text-slate-600 text-xs z-10 border-t border-white/5 bg-black/20 backdrop-blur-lg">
+      <MobileTabBar />
+
+      {/* Footer - Desktop Only */}
+      <footer className="hidden md:block p-6 text-center text-slate-600 text-xs z-10 border-t border-white/5 bg-black/20 backdrop-blur-lg">
         &copy; 2026 Educational Digital Hub - Powered by GPS No. 4 Kunda Core
       </footer>
     </div>
