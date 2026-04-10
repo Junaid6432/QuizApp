@@ -24,12 +24,11 @@ const MathText = ({ text, className = "" }) => {
           const formula = part.substring(2, part.length - 2);
           return <BlockMath key={index} math={formula} />;
         } else if (part.startsWith('$') && part.endsWith('$')) {
-          const formula = part.substring(1, part.length - 1).replace(/\\\\/g, '\\');
+          const formula = part.substring(1, part.length - 1);
           return <InlineMath key={index} math={formula} />;
         } else if (part.startsWith('\\begin{') || part.includes('\\\\')) {
-          // Auto-detect math environments and fix JSON-escaped backslashes (\\\\ -> \\)
-          const formula = part.replace(/\\\\/g, '\\');
-          return <InlineMath key={index} math={formula} />;
+          // Auto-detect math environments without delimiters
+          return <InlineMath key={index} math={part} />;
         }
         return <span key={index}>{part}</span>;
       })}
