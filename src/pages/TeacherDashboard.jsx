@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useQuiz } from '../context/QuizContext';
-import { Plus, Trash2, Edit2, Power, ClipboardList, TrendingUp, ChevronRight, ArrowLeft, Trophy, Users, School, Hash } from 'lucide-react';
+import { Plus, Trash2, Edit2, Power, ClipboardList, TrendingUp, ChevronRight, ArrowLeft, Trophy, Users, School, Hash, CheckSquare, Square, FolderTree } from 'lucide-react';
 import { CLASSES, BASE_SUBJECTS, HIGH_SCHOOL_SUBJECTS, getSubjectsByClass } from '../constants/collegeData';
 import GlassCard from '../components/ui/GlassCard';
 import Button from '../components/ui/Button';
@@ -38,6 +38,37 @@ const TeacherDashboard = () => {
     (!filter.class || q.class === filter.class) &&
     (!filter.subject || q.subject === filter.subject)
   );
+
+  // Group quizzes by Unit
+  const groupedQuizzes = useMemo(() => {
+    const groups = {};
+    filteredQuizzes.forEach(quiz => {
+      const unit = quiz.unit || 'Other';
+      if (!groups[unit]) groups[unit] = [];
+      groups[unit].push(quiz);
+    });
+    
+    // Sort keys naturally (Unit 1, Unit 2, etc.)
+    return Object.keys(groups)
+      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
+      .reduce((acc, key) => {
+        acc[key] = groups[key];
+        return acc;
+      }, {});
+  }, [filteredQuizzes]);
+
+  const handleToggleUnit = async (unitName, quizzesInUnit) => {
+    // Determine if all are currently active
+    const allActive = quizzesInUnit.every(q => q.isActive);
+    const targetState = !allActive;
+
+    // Toggle all quizzes in this unit to the target state
+    for (const quiz of quizzesInUnit) {
+      if (quiz.isActive !== targetState) {
+        await toggleQuizActive(quiz.id);
+      }
+    }
+  };
 
   return (
     <div className="flex-1 p-6 space-y-8 max-w-7xl mx-auto w-full">
@@ -163,57 +194,108 @@ const TeacherDashboard = () => {
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5 text-white">
-              {filteredQuizzes.length > 0 ? filteredQuizzes.map((quiz, idx) => (
-                <motion.tr key={`${quiz.id}-${idx}`} layout className="group hover:bg-white/5 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="font-bold">{quiz.subject}</div>
-                    <div className="text-xs text-slate-400">{quiz.unit}</div>
-                  </td>
-                  <td className="px-6 py-4 text-slate-300">{quiz.class}</td>
-                  <td className="px-6 py-4">
-                    <div className="font-bold text-white">{quiz.questionLimit || quiz.questions.length}</div>
-                    <div className="text-[10px] text-slate-500 uppercase font-black tracking-tighter">
-                      Pool: {quiz.questions.length}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex justify-center">
-                      <button 
-                        onClick={() => toggleQuizActive(quiz.id)}
-                        className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
-                          quiz.isActive 
-                            ? 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/30' 
-                            : 'bg-slate-500/20 text-slate-400 border border-white/10'
-                        }`}
-                      >
-                        {quiz.isActive ? 'ACTIVE' : 'INACTIVE'}
-                      </button>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button 
-                        onClick={() => handleEdit(quiz)}
-                        className="p-2 text-slate-400 hover:text-blue-400 transition-colors"
-                        title="Edit Quiz"
-                      >
-                        <Edit2 className="w-5 h-5" />
-                      </button>
-                      <button 
-                        onClick={() => deleteQuiz(quiz.id)}
-                        className="p-2 text-slate-400 hover:text-red-500 transition-colors"
-                        title="Delete Quiz"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </td>
-                </motion.tr>
+            <tbody className="text-white">
+              {Object.keys(groupedQuizzes).length > 0 ? Object.entries(groupedQuizzes).map(([unitName, unitQuizzes]) => (
+                <React.Fragment key={unitName}>
+                  {/* Unit Header Row */}
+                  <tr className="bg-blue-900/40 border-y border-white/5 group/header">
+                    <td colSpan="3" className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <FolderTree className="w-5 h-5 text-blue-400" />
+                        <span className="text-lg font-black text-white tracking-wide uppercase">{unitName}</span>
+                        <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-md font-bold">
+                          {unitQuizzes.length} TOPICS
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex justify-center">
+                        <button 
+                          onClick={() => handleToggleUnit(unitName, unitQuizzes)}
+                          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black tracking-widest transition-all border ${
+                            unitQuizzes.every(q => q.isActive)
+                              ? 'bg-emerald-500 text-white border-emerald-400'
+                              : 'bg-slate-800 text-slate-400 border-white/10 hover:border-white/20'
+                          }`}
+                        >
+                          {unitQuizzes.every(q => q.isActive) ? <CheckSquare className="w-3 h-3" /> : <Square className="w-3 h-3" />}
+                          {unitQuizzes.every(q => q.isActive) ? 'ALL ACTIVE' : 'ACTIVATE ALL'}
+                        </button>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      {/* Empty action space for header */}
+                    </td>
+                  </tr>
+
+                  {/* Individual Topics */}
+                  {unitQuizzes.map((quiz, idx) => (
+                    <motion.tr 
+                      key={quiz.id} 
+                      layout 
+                      className="group border-b border-white/5 hover:bg-white/5 transition-colors"
+                    >
+                      <td className="px-6 py-4 pl-12">
+                        <div className="flex items-start gap-4">
+                          <div className="mt-1.5 flex flex-col items-center gap-1">
+                            <div className="w-1.5 h-1.5 rounded-full bg-slate-700 group-hover:bg-primary-500 transition-colors" />
+                            <div className="w-px h-8 bg-slate-800" />
+                          </div>
+                          <div>
+                            <div className="font-bold flex items-center gap-2">
+                              {quiz.subject}
+                              {quiz.isActive && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
+                            </div>
+                            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{quiz.topicName || 'General Assessment'}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-slate-300 font-medium">{quiz.class}</td>
+                      <td className="px-6 py-4">
+                        <div className="font-bold text-white">{quiz.questionLimit || quiz.questions.length}</div>
+                        <div className="text-[10px] text-slate-500 uppercase font-black tracking-tighter">
+                          Pool: {quiz.questions.length}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex justify-center">
+                          <button 
+                            onClick={() => toggleQuizActive(quiz.id)}
+                            className={`px-3 py-1 rounded-full text-[10px] font-black transition-all ${
+                              quiz.isActive 
+                                ? 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/30' 
+                                : 'bg-slate-500/20 text-slate-400 border border-white/10'
+                            }`}
+                          >
+                            {quiz.isActive ? 'ACTIVE' : 'INACTIVE'}
+                          </button>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex justify-end gap-2">
+                          <button 
+                            onClick={() => handleEdit(quiz)}
+                            className="p-2 text-slate-400 hover:text-blue-400 transition-colors"
+                            title="Edit Topic"
+                          >
+                            <Edit2 className="w-5 h-5" />
+                          </button>
+                          <button 
+                            onClick={() => deleteQuiz(quiz.id)}
+                            className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                            title="Delete Topic"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </td>
+                    </motion.tr>
+                  ))}
+                </React.Fragment>
               )) : (
                 <tr>
-                  <td colSpan="5" className="px-6 py-12 text-center text-slate-500">
-                    No quizzes found matching filters.
+                  <td colSpan="5" className="px-6 py-12 text-center text-slate-500 font-medium">
+                    No assessments found matching filters.
                   </td>
                 </tr>
               )}
