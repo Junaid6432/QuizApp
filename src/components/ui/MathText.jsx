@@ -12,10 +12,9 @@ const MathText = ({ text, className = "" }) => {
   // Improved regex to detect:
   // 1. $$...$$ (block math)
   // 2. $...$ (inline math)
-  // 3. \begin{...}...\end{...} (unwrapped matrices/environments)
+  // 3. \begin{...}...\end{...} (unwrapped matrices/environments) - and capture trailing superscripts like ^t or ^2
   // 4. \[...\] or \(...\) (standard LaTeX blocks)
-  // Using [\s\S] instead of . to match newlines within math blocks
-  const parts = text.split(/(\$\$[\s\S]+?\$\$|\$[\s\S]+?\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|\\begin\{[\s\S]+?\}[\s\S]+?\\end\{[\s\S]+?\})/g);
+  const parts = text.split(/(\$\$[\s\S]+?\$\$|\$[\s\S]+?\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|\\begin\{[\s\S]+?\}[\s\S]+?\\end\{[\s\S]+?\}(?:\^[\w\d]|\^\{[\s\S]+?\})?)/g);
 
   return (
     <span className={className}>
@@ -26,9 +25,14 @@ const MathText = ({ text, className = "" }) => {
         } else if (part.startsWith('$') && part.endsWith('$')) {
           const formula = part.substring(1, part.length - 1);
           return <InlineMath key={index} math={formula} />;
-        } else if (part.startsWith('\\begin{') || part.includes('\\\\')) {
-          // Auto-detect math environments without delimiters
-          return <InlineMath key={index} math={part} />;
+        } else if (part.startsWith('\\begin{') || part.includes('\\\\') || part.includes('\\times')) {
+          // Auto-detect math environments and fix common encoding issues
+          // If it starts with \begin and ends with \end plus optional superscript, wrap in {} for KaTeX safety
+          let formula = part;
+          if (part.includes('\\end{') && (part.includes('^') || part.includes('_'))) {
+            formula = `{${part}}`;
+          }
+          return <InlineMath key={index} math={formula} />;
         }
         return <span key={index}>{part}</span>;
       })}
