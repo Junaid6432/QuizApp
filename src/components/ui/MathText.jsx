@@ -9,12 +9,12 @@ import { InlineMath, BlockMath } from 'react-katex';
 const MathText = ({ text, className = "" }) => {
   if (!text) return null;
 
-  // Improved regex to detect:
-  // 1. $$...$$ (block math)
-  // 2. $...$ (inline math)
-  // 3. \begin{...}...\end{...} (unwrapped matrices/environments) - and capture trailing superscripts like ^t or ^2
-  // 4. \[...\] or \(...\) (standard LaTeX blocks)
-  const parts = text.split(/(\$\$[\s\S]+?\$\$|\$[\s\S]+?\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|\\begin\{[\s\S]+?\}[\s\S]+?\\end\{[\s\S]+?\}(?:\^[\w\d]|\^\{[\s\S]+?\})?)/g);
+  // Pre-process: Auto-wrap naked LaTeX environments (\begin{...}...\end{...}) in $ if not already wrapped
+  // This handles the case where users forget to use $ delimiters
+  const wrappedText = text.replace(/(?<!\$|\\begin\{[\s\S]+?\})(\\begin\{[\s\S]+?\}[\s\S]+?\\end\{[\s\S]+?\}(?:\^[\w\d]|\^\{[\s\S]+?\})?)(?!\$)/g, '$$$1$$');
+
+  // Improved regex to detect common math blocks
+  const parts = wrappedText.split(/(\$\$[\s\S]+?\$\$|\$[\s\S]+?\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\))/g);
 
   return (
     <span className={className}>
