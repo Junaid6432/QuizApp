@@ -26,7 +26,6 @@ const QuizCreator = () => {
   const [questions, setQuestions] = useState([]);
   const [error, setError] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [showSample, setShowSample] = useState(false);
   const fileInputRef = useRef(null);
 
   // Load existing quiz if in edit mode
@@ -288,27 +287,19 @@ const QuizCreator = () => {
                   onChange={handleFileUpload} 
                   accept=".json,.csv"
                 />
-                <div className="flex flex-col items-center">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => fileInputRef.current?.click()}
-                    className="py-2 px-4 text-sm flex items-center gap-2 border-white/10 hover:bg-white/5"
-                    disabled={isUploading}
-                  >
-                    {isUploading ? (
-                      <div className="w-4 h-4 border-2 border-primary-500/30 border-t-primary-500 rounded-full animate-spin" />
-                    ) : (
-                      <Upload className="w-4 h-4" />
-                    )}
-                    {isUploading ? 'Parsing...' : 'Bulk JSON/CSV'}
-                  </Button>
-                  <button 
-                    onClick={() => setShowSample(true)}
-                    className="text-[10px] text-blue-400 hover:text-blue-300 underline mt-1 font-bold transition-colors"
-                  >
-                    View Sample Format
-                  </button>
-                </div>
+                <Button 
+                  variant="outline" 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="py-2 px-4 text-sm flex items-center gap-2 border-white/10 hover:bg-white/5"
+                  disabled={isUploading}
+                >
+                  {isUploading ? (
+                    <div className="w-4 h-4 border-2 border-primary-500/30 border-t-primary-500 rounded-full animate-spin" />
+                  ) : (
+                    <Upload className="w-4 h-4" />
+                  )}
+                  {isUploading ? 'Parsing...' : 'Bulk JSON/CSV'}
+                </Button>
               </div>
             </div>
 
@@ -376,62 +367,6 @@ const QuizCreator = () => {
           </GlassCard>
         </div>
       </div>
-
-      {/* Sample Format Modal */}
-      <AnimatePresence>
-        {showSample && (
-          <div className="fixed inset-0 z-[150] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-slate-900 border border-white/10 p-8 rounded-3xl max-w-lg w-full relative"
-            >
-              <button 
-                onClick={() => setShowSample(false)}
-                className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white"
-              >
-                <X className="w-6 h-6" />
-              </button>
-              
-              <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                <FileText className="w-5 h-5 text-blue-500" />
-                Correct JSON Format
-              </h3>
-              
-              <div className="bg-black/40 p-4 rounded-2xl border border-white/5 mb-6 overflow-x-auto">
-                <pre className="text-[10px] text-blue-300 font-mono leading-relaxed">
-{`[
-  {
-    "question": "If $M = \\\\begin{bmatrix} a & b \\\\\\\\ c & d \\\\end{bmatrix}$, find $|M|$.",
-    "options": ["ad-bc", "ad+bc", "ab-cd", "0"],
-    "answer": "ad-bc"
-  }
-]`}
-                </pre>
-              </div>
-              
-              <div className="space-y-3">
-                <div className="flex gap-2 items-start text-xs text-slate-400">
-                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />
-                  <p>Math symbols ko hamesha <span className="text-blue-400 font-bold">$...$</span> ke andar rakhein.</p>
-                </div>
-                <div className="flex gap-2 items-start text-xs text-slate-400">
-                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />
-                  <p>JSON mein backslash ke liye <span className="text-blue-400 font-bold">\\\\\\</span> (double backslash) use karein.</p>
-                </div>
-              </div>
-
-              <Button 
-                onClick={() => setShowSample(false)}
-                className="w-full mt-8"
-              >
-                I Understand
-              </Button>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       {/* Loading Overlay for Saving */}
       <AnimatePresence>

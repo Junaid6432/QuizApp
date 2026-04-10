@@ -9,11 +9,12 @@ import { InlineMath, BlockMath } from 'react-katex';
 const MathText = ({ text, className = "" }) => {
   if (!text) return null;
 
-  // Split by $$...$$ (block) or $...$ (inline)
-  // This regex matches: 
+  // Improved regex to detect:
   // 1. $$...$$ (block math)
   // 2. $...$ (inline math)
-  const parts = text.split(/(\$\$.+?\$\$|\$.+?\$)/g);
+  // 3. \begin{...}...\end{...} (unwrapped matrices/environments)
+  // 4. \[...\] or \(...\) (standard LaTeX blocks)
+  const parts = text.split(/(\$\$.+?\$\$|\$.+?\$|\\\[.+?\\\]|\\\(.+?\\\)|\\begin\{.+?\}.+?\\end\{.+?\})/g);
 
   return (
     <span className={className}>
@@ -24,6 +25,9 @@ const MathText = ({ text, className = "" }) => {
         } else if (part.startsWith('$') && part.endsWith('$')) {
           const formula = part.substring(1, part.length - 1);
           return <InlineMath key={index} math={formula} />;
+        } else if (part.startsWith('\\begin{') || part.includes('\\\\')) {
+          // Auto-detect math environments even without delimiters
+          return <InlineMath key={index} math={part} />;
         }
         return <span key={index}>{part}</span>;
       })}
