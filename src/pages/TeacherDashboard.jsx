@@ -149,7 +149,7 @@ const TeacherDashboard = () => {
       </div>
 
       {/* Quiz Management */}
-      <GlassCard className="overflow-hidden">
+      <GlassCard className="overflow-hidden max-w-none mx-0 border-white/10">
         <div className="p-6 border-b border-white/5 flex flex-wrap gap-4 items-center justify-between">
           <h2 className="text-xl font-bold text-white">Manage Assessments</h2>
           <div className="flex gap-4">
