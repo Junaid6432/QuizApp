@@ -188,8 +188,8 @@ const TeacherDashboard = () => {
             <thead>
               <tr className="bg-white/5 text-slate-400 text-sm uppercase">
                 <th className="px-6 py-4">Title / Unit</th>
-                <th className="px-6 py-4">Class</th>
-                <th className="px-6 py-4">Questions</th>
+                <th className="px-6 py-4 text-center">Class</th>
+                <th className="px-6 py-4 text-center">Questions</th>
                 <th className="px-6 py-4 text-center">Status</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
@@ -201,8 +201,10 @@ const TeacherDashboard = () => {
                   <tr className="bg-blue-900/40 border-y border-white/5 group/header">
                     <td colSpan="3" className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <FolderTree className="w-5 h-5 text-blue-400" />
-                        <span className="text-lg font-black text-white tracking-wide uppercase">{unitName}</span>
+                        <div className="p-1.5 bg-blue-500/20 rounded-lg">
+                          <FolderTree className="w-4 h-4 text-blue-400" />
+                        </div>
+                        <span className="text-base font-black text-white tracking-wide uppercase">{unitName}</span>
                         <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-md font-bold">
                           {unitQuizzes.length} TOPICS
                         </span>
@@ -214,17 +216,17 @@ const TeacherDashboard = () => {
                           onClick={() => handleToggleUnit(unitName, unitQuizzes)}
                           className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black tracking-widest transition-all border ${
                             unitQuizzes.every(q => q.isActive)
-                              ? 'bg-emerald-500 text-white border-emerald-400'
+                              ? 'bg-emerald-500 text-white border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.2)]'
                               : 'bg-slate-800 text-slate-400 border-white/10 hover:border-white/20'
                           }`}
                         >
                           {unitQuizzes.every(q => q.isActive) ? <CheckSquare className="w-3 h-3" /> : <Square className="w-3 h-3" />}
-                          {unitQuizzes.every(q => q.isActive) ? 'ALL ACTIVE' : 'ACTIVATE ALL'}
+                          {unitQuizzes.every(q => q.isActive) ? 'UNIT ACTIVE' : 'ACTIVATE UNIT'}
                         </button>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      {/* Empty action space for header */}
+                      {/* Actions Column Placeholder */}
                     </td>
                   </tr>
 
@@ -235,26 +237,32 @@ const TeacherDashboard = () => {
                       layout 
                       className="group border-b border-white/5 hover:bg-white/5 transition-colors"
                     >
-                      <td className="px-6 py-4 pl-14 md:pl-20">
-                        <div className="flex items-start gap-4">
-                          <div className="mt-1.5 flex flex-col items-center gap-1">
-                            <div className="w-1.5 h-1.5 rounded-full bg-slate-700 group-hover:bg-primary-500 transition-colors" />
-                            {idx < unitQuizzes.length - 1 && <div className="w-px h-8 bg-slate-800" />}
+                      <td className="px-6 py-3">
+                        <div className="flex items-start gap-4 ml-8 md:ml-12 lg:ml-14">
+                          <div className="mt-1 flex flex-col items-center gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
+                            <div className="w-1.5 h-1.5 rounded-full bg-slate-500" />
+                            {idx < unitQuizzes.length - 1 && <div className="w-px h-10 bg-slate-700" />}
                           </div>
-                          <div>
-                            <div className="font-bold flex items-center gap-2">
-                              {quiz.subject}
-                              {quiz.isActive && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
+                          <div className="min-w-0">
+                            <div className="font-bold flex items-center gap-2 truncate">
+                              <span className="text-white group-hover:text-primary-400 transition-colors uppercase tracking-tight">{quiz.subject}</span>
+                              {quiz.isActive && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />}
                             </div>
-                            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{quiz.topicName || 'General Assessment'}</div>
+                            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest truncate">{quiz.topicName || 'General Assessment'}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-slate-300 font-medium">{quiz.class}</td>
-                      <td className="px-6 py-4">
-                        <div className="font-bold text-white">{quiz.questionLimit || quiz.questions.length}</div>
-                        <div className="text-[10px] text-slate-500 uppercase font-black tracking-tighter">
-                          Pool: {quiz.questions.length}
+                      <td className="px-6 py-3 text-center">
+                        <span className="inline-flex items-center justify-center bg-white/5 border border-white/10 rounded-lg w-8 h-8 text-slate-300 font-bold text-sm">
+                          {quiz.class}
+                        </span>
+                      </td>
+                      <td className="px-6 py-3 text-center">
+                        <div className="flex flex-col items-center">
+                          <span className="font-bold text-white leading-none">{quiz.questionLimit || quiz.questions.length}</span>
+                          <span className="text-[9px] text-slate-500 uppercase font-black tracking-tighter">
+                            Pool: {quiz.questions.length}
+                          </span>
                         </div>
                       </td>
                       <td className="px-6 py-4">
