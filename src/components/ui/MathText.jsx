@@ -9,42 +9,67 @@ import { InlineMath, BlockMath } from 'react-katex';
 const MathText = ({ text, className = "" }) => {
   if (!text) return null;
 
-  // New Splitter: Detects $$, $, \[, \(, and \begin{env}...\end{env} blocks
-  // The \1 backreference ensures \begin{X} matches \end{X}
-  const regex = /(\$\$[\s\S]+?\$\$|\$[\s\S]+?\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|\\begin\{([\s\S]+?)\}[\s\S]+?\\end\{\2\}(?:\^[\w\d]|\^\{[\s\S]+?\})?)/g;
-  const parts = text.split(regex);
+  // Segment identification logic
+  const getSegments = (input) => {
+    // Regex for: $$, $, \[, \(, and \begin{env}...\end{env}
+    // Note the \2 backreference for environment matching
+    const regex = /(\$\$[\s\S]+?\$\$|\$[\s\S]+?\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|\\begin\{([\s\S]+?)\}[\s\S]+?\\end\{\2\}(?:\^[\w\d]|\^\{[\s\S]+?\})?)/g;
+    const result = [];
+    let lastIndex = 0;
+
+    input.replace(regex, (match, full, env, offset) => {
+      // Add text before the match
+      if (offset > lastIndex) {
+        result.push({ type: 'text', content: input.substring(lastIndex, offset) });
+      }
+      result.push({ type: 'math', content: match });
+      lastIndex = offset + match.length;
+    });
+
+    // Add remaining text
+    if (lastIndex < input.length) {
+      result.push({ type: 'text', content: input.substring(lastIndex) });
+    }
+    return result;
+  };
+
+  const segments = getSegments(text);
 
   return (
     <span className={className}>
-      {parts.map((part, index) => {
-        if (!part) return null;
+      {segments.map((seg, index) => {
+        const { type, content } = seg;
+        if (type === 'text') return <span key={index}>{content}</span>;
 
-        // Skip the backreference capture groups from the split regex
-        // If this part is exactly the environment name of the previous \begin block
-        if (parts[index-1]?.startsWith('\\begin{') && part === parts[index-1].match(/\\begin\{([\s\S]+?)\}/)?.[1]) return null;
+        // Process Math
+        let formula = content;
+        let isBlock = false;
 
-        if (part.startsWith('$$') && part.endsWith('$$')) {
-          const formula = part.substring(2, part.length - 2);
-          return <BlockMath key={index} math={formula} />;
-        } else if (part.startsWith('$') && part.endsWith('$')) {
-          const formula = part.substring(1, part.length - 1);
-          return <InlineMath key={index} math={formula} />;
-        } else if (part.startsWith('\\\[') && part.endsWith('\\\]')) {
-          const formula = part.substring(2, part.length - 2);
-          return <BlockMath key={index} math={formula} />;
-        } else if (part.startsWith('\\\(') && part.endsWith('\\\)')) {
-          const formula = part.substring(2, part.length - 2);
-          return <InlineMath key={index} math={formula} />;
-        } else if (part.startsWith('\\begin{')) {
-          // Standard LaTeX environments
-          let formula = part;
-          if (part.includes('\\end{') && (part.includes('^') || part.includes('_'))) {
-            formula = `{${part}}`; // KaTeX safety for superscripts on environments
+        if (formula.startsWith('$$') && formula.endsWith('$$')) {
+          formula = formula.substring(2, formula.length - 2);
+          isBlock = true;
+        } else if (formula.startsWith('$') && formula.endsWith('$')) {
+          formula = formula.substring(1, formula.length - 1);
+        } else if (formula.startsWith('\\\[') && formula.endsWith('\\\]')) {
+          formula = formula.substring(2, formula.length - 2);
+          isBlock = true;
+        } else if (formula.startsWith('\\\(') && formula.endsWith('\\\)')) {
+          formula = formula.substring(2, formula.length - 2);
+        } else if (formula.startsWith('\\begin{')) {
+          // Keep the whole string for \begin blocks, but ensure safety
+          if (formula.includes('\\end{') && (formula.includes('^') || formula.includes('_'))) {
+            formula = `{${formula}}`;
           }
-          return <InlineMath key={index} math={formula} />;
         }
-        
-        return <span key={index}>{part}</span>;
+
+        // Sanitize formula for KaTeX (handle potential newline issues in some JS engines)
+        const cleanFormula = formula.trim().replace(/\r?\n/g, ' ');
+
+        return isBlock ? (
+          <BlockMath key={index} math={cleanFormula} />
+        ) : (
+          <InlineMath key={index} math={cleanFormula} />
+        );
       })}
     </span>
   );
