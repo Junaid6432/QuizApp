@@ -1,46 +1,67 @@
-import React from 'react';
-import { InlineMath, BlockMath } from 'react-katex';
+import React, { useMemo } from 'react';
+import katex from 'katex';
 
 /**
- * MathText Component
- * Splits a string and renders text and math separately with production-hardened KaTeX settings.
+ * Robust LaTeX Sanitizer
+ * Handles excessive escaping (e.g., \\\\ or \\\\\\\\) and normalizes it for KaTeX.
  */
+const sanitizeLaTeX = (formula) => {
+  if (!formula) return "";
+
+  let sanitized = formula.trim();
+
+  // Step 1: Normalize newlines
+  sanitized = sanitized.replace(/\r?\n/g, ' ');
+
+  // Step 2: Handle 'Exploded' backslashes often found in JSON (\\\\ or \\\\\\\\)
+  // We want to collapse sequences of 2+ backslashes to a manageable state.
+  // In JS strings, \\\\ is actually two literal backslashes.
+  
+  // If we see 4 literal backslashes (\\\\), it was likely \\\\\\\\ in JSON. 
+  // We convert it to 2 backslashes.
+  sanitized = sanitized.replace(/\\\\\\\\/g, '\\\\');
+  
+  // If we still see 2 literal backslashes followed by a command (like \\begin), 
+  // it should almost certainly be 1 (\begin).
+  sanitized = sanitized.replace(/\\\\(begin|end|matrix|bmatrix|vmatrix|adj|det|frac|sqrt|alpha|beta|gamma|theta|pi|phi|sum|int)/g, '\\$1');
+  
+  // Fix common matrix row separator issue: ensure exactly \\ exists between rows if needed
+  // Note: we don't want to aggressively collapse \\ unless it's clearly for a command.
+  
+  return sanitized;
+};
+
 const MathText = ({ text, className = "" }) => {
   if (!text) return null;
 
-  // Segment identification logic
-  const getSegments = (input) => {
-    // Regex for: $$, $, \[, \(, and \begin{env}...\end{env}
+  const segments = useMemo(() => {
     const regex = /(\$\$[\s\S]+?\$\$|\$[\s\S]+?\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|\\begin\{([\s\S]+?)\}[\s\S]+?\\end\{\2\}(?:\^[\w\d]|\^\{[\s\S]+?\})?)/g;
     const result = [];
     let lastIndex = 0;
 
-    input.replace(regex, (match, full, env, offset) => {
+    text.replace(regex, (match, full, env, offset) => {
       if (offset > lastIndex) {
-        result.push({ type: 'text', content: input.substring(lastIndex, offset) });
+        result.push({ type: 'text', content: text.substring(lastIndex, offset) });
       }
       result.push({ type: 'math', content: match });
       lastIndex = offset + match.length;
     });
 
-    if (lastIndex < input.length) {
-      result.push({ type: 'text', content: input.substring(lastIndex) });
+    if (lastIndex < text.length) {
+      result.push({ type: 'text', content: text.substring(lastIndex) });
     }
     return result;
-  };
-
-  const segments = getSegments(text);
+  }, [text]);
 
   return (
     <span className={className}>
       {segments.map((seg, index) => {
-        const { type, content } = seg;
-        if (type === 'text') return <span key={index}>{content}</span>;
+        if (seg.type === 'text') return <span key={index}>{seg.content}</span>;
 
-        // Process Math
-        let formula = content;
+        let formula = seg.content;
         let isBlock = false;
 
+        // Strip delimiters
         if (formula.startsWith('$$') && formula.endsWith('$$')) {
           formula = formula.substring(2, formula.length - 2);
           isBlock = true;
@@ -51,30 +72,33 @@ const MathText = ({ text, className = "" }) => {
           isBlock = true;
         } else if (formula.startsWith('\\\(') && formula.endsWith('\\\)')) {
           formula = formula.substring(2, formula.length - 2);
-        } else if (formula.startsWith('\\begin{')) {
-          if (formula.includes('\\end{') && (formula.includes('^') || formula.includes('_'))) {
-            formula = `{${formula}}`;
-          }
         }
 
-        // Sanitize formula for KaTeX (production-hardened)
-        const cleanFormula = formula
-          .trim()
-          .replace(/\r?\n/g, ' ') // Standardize newlines
-          .replace(/\\\\ /g, '\\\\') // Fix common matrix row spacing issues
-          .replace(/\\ /g, ' '); // Decode escaped spaces for KaTeX
+        const cleanFormula = sanitizeLaTeX(formula);
 
-        const settings = {
-          strict: false,
-          throwOnError: false,
-          trust: true
-        };
+        try {
+          const html = katex.renderToString(cleanFormula, {
+            displayMode: isBlock,
+            throwOnError: false,
+            strict: false,
+            trust: true
+          });
 
-        return isBlock ? (
-          <BlockMath key={index} math={cleanFormula} settings={settings} />
-        ) : (
-          <InlineMath key={index} math={cleanFormula} settings={settings} />
-        );
+          return (
+            <span 
+              key={index} 
+              className={isBlock ? "block my-4" : "inline-block"}
+              dangerouslySetInnerHTML={{ __html: html }} 
+            />
+          );
+        } catch (error) {
+          console.error("KaTeX error:", error);
+          return (
+            <span key={index} className="text-red-500 font-mono text-xs border border-red-500/20 px-1 rounded" title={error.message}>
+              {cleanFormula}
+            </span>
+          );
+        }
       })}
     </span>
   );
