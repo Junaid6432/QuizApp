@@ -1,10 +1,9 @@
 import React from 'react';
-import 'katex/dist/katex.min.css';
 import { InlineMath, BlockMath } from 'react-katex';
 
 /**
  * MathText Component
- * Splits a string by $ (inline) or $$ (block) markers and renders text and math separately.
+ * Splits a string and renders text and math separately with production-hardened KaTeX settings.
  */
 const MathText = ({ text, className = "" }) => {
   if (!text) return null;
@@ -12,13 +11,11 @@ const MathText = ({ text, className = "" }) => {
   // Segment identification logic
   const getSegments = (input) => {
     // Regex for: $$, $, \[, \(, and \begin{env}...\end{env}
-    // Note the \2 backreference for environment matching
     const regex = /(\$\$[\s\S]+?\$\$|\$[\s\S]+?\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|\\begin\{([\s\S]+?)\}[\s\S]+?\\end\{\2\}(?:\^[\w\d]|\^\{[\s\S]+?\})?)/g;
     const result = [];
     let lastIndex = 0;
 
     input.replace(regex, (match, full, env, offset) => {
-      // Add text before the match
       if (offset > lastIndex) {
         result.push({ type: 'text', content: input.substring(lastIndex, offset) });
       }
@@ -26,7 +23,6 @@ const MathText = ({ text, className = "" }) => {
       lastIndex = offset + match.length;
     });
 
-    // Add remaining text
     if (lastIndex < input.length) {
       result.push({ type: 'text', content: input.substring(lastIndex) });
     }
@@ -56,19 +52,28 @@ const MathText = ({ text, className = "" }) => {
         } else if (formula.startsWith('\\\(') && formula.endsWith('\\\)')) {
           formula = formula.substring(2, formula.length - 2);
         } else if (formula.startsWith('\\begin{')) {
-          // Keep the whole string for \begin blocks, but ensure safety
           if (formula.includes('\\end{') && (formula.includes('^') || formula.includes('_'))) {
             formula = `{${formula}}`;
           }
         }
 
-        // Sanitize formula for KaTeX (handle potential newline issues in some JS engines)
-        const cleanFormula = formula.trim().replace(/\r?\n/g, ' ');
+        // Sanitize formula for KaTeX (production-hardened)
+        const cleanFormula = formula
+          .trim()
+          .replace(/\r?\n/g, ' ') // Standardize newlines
+          .replace(/\\\\ /g, '\\\\') // Fix common matrix row spacing issues
+          .replace(/\\ /g, ' '); // Decode escaped spaces for KaTeX
+
+        const settings = {
+          strict: false,
+          throwOnError: false,
+          trust: true
+        };
 
         return isBlock ? (
-          <BlockMath key={index} math={cleanFormula} />
+          <BlockMath key={index} math={cleanFormula} settings={settings} />
         ) : (
-          <InlineMath key={index} math={cleanFormula} />
+          <InlineMath key={index} math={cleanFormula} settings={settings} />
         );
       })}
     </span>
