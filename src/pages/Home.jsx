@@ -9,13 +9,6 @@ import { CLASSES, getSubjectsByClass } from '../constants/collegeData';
 const Home = () => {
   const { quizzes, setGameState, setSelectedUnit, attempts, studentData, isLoading } = useQuiz();
 
-  if (isLoading) {
-    return (
-      <div className="flex-1 flex items-center justify-center bg-premium-gradient">
-        <div className="w-12 h-12 border-4 border-primary-500/20 border-t-primary-500 rounded-full animate-spin" />
-      </div>
-    );
-  }
 
   const [selection, setSelection] = useState({ class: '', subject: '' });
 
@@ -119,6 +112,14 @@ const Home = () => {
       .sort((a, b) => b.percentage - a.percentage || (a.timeTaken || 0) - (b.timeTaken || 0))
       .slice(0, 3);
   }, [attempts, selection]);
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-premium-gradient">
+        <div className="w-12 h-12 border-4 border-primary-500/20 border-t-primary-500 rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-6 bg-premium-gradient">
