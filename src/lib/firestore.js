@@ -35,6 +35,9 @@ export const subscribeToQuizzes = (callback, emisCode) => {
       ...doc.data()
     }));
     callback(quizzes);
+  }, (error) => {
+    console.error("Error subscribing to quizzes: ", error);
+    callback([], error);
   });
 };
 
@@ -107,6 +110,9 @@ export const subscribeToAttempts = (callback, emisCode) => {
       ...doc.data()
     }));
     callback(attempts);
+  }, (error) => {
+    console.error("Error subscribing to attempts: ", error);
+    callback([], error);
   });
 };
 

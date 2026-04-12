@@ -25,12 +25,13 @@ const Layout = () => {
 
   if (isLoadingAuth) {
     return (
-      <div className="min-h-screen bg-premium-gradient flex items-center justify-center">
+      <div className="min-h-screen bg-premium-gradient flex flex-col items-center justify-center space-y-4">
         <motion.div 
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
           className="w-12 h-12 border-4 border-primary-500/20 border-t-primary-500 rounded-full" 
         />
+        <p className="text-primary-400 font-bold animate-pulse text-xs tracking-[0.3em] uppercase">Initializing Portal...</p>
       </div>
     );
   }
@@ -122,12 +123,13 @@ const Layout = () => {
       <main className="flex-1 flex flex-col relative z-20 pb-28 md:pb-6">
         <AnimatePresence mode="wait">
           <Suspense fallback={
-            <div className="flex-1 flex items-center justify-center">
+            <div className="flex-1 flex flex-col items-center justify-center space-y-4">
               <motion.div 
                 animate={{ rotate: 360 }}
                 transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                 className="w-12 h-12 border-4 border-primary-500/20 border-t-primary-500 rounded-full" 
               />
+              <p className="text-slate-500 font-bold text-[10px] tracking-widest uppercase">Loading Components (Lazy)...</p>
             </div>
           }>
             <motion.div

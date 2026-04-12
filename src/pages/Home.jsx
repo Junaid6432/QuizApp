@@ -7,7 +7,7 @@ import { Trophy, Compass, CheckCircle2, AlertCircle, Users, GraduationCap, Zap, 
 import { CLASSES, getSubjectsByClass } from '../constants/collegeData';
 
 const Home = () => {
-  const { quizzes, setGameState, setSelectedUnit, attempts, studentData, isLoading } = useQuiz();
+  const { quizzes, setGameState, setSelectedUnit, attempts, studentData, isLoading, isFirebaseConfigured } = useQuiz();
 
 
   const [selection, setSelection] = useState({ class: '', subject: '' });
@@ -239,19 +239,31 @@ const Home = () => {
                     Launch {activeUnitData.unit} Challenge
                   </Button>
                 </motion.div>
-              ) : (
-                <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="p-6 rounded-2xl bg-white/5 border border-white/5 flex items-center gap-4 text-slate-400"
-                >
-                  <AlertCircle className="w-8 h-8 text-amber-500" />
-                  <div>
-                    <p className="font-bold text-slate-300">No active quiz.</p>
-                    <p className="text-sm">Speak with your teacher to activate the unit assessment.</p>
-                  </div>
-                </motion.div>
-              )
+                ) : !isFirebaseConfigured ? (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="p-6 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center gap-4 text-red-500"
+                  >
+                    <AlertCircle className="w-8 h-8 flex-shrink-0" />
+                    <div>
+                      <p className="font-bold">Configuration Missing</p>
+                      <p className="text-sm">Database connection not found. Check your environment variables.</p>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="p-6 rounded-2xl bg-white/5 border border-white/5 flex items-center gap-4 text-slate-400"
+                  >
+                    <AlertCircle className="w-8 h-8 text-amber-500" />
+                    <div>
+                      <p className="font-bold text-slate-300">No active quiz.</p>
+                      <p className="text-sm">Speak with your teacher to activate the unit assessment.</p>
+                    </div>
+                  </motion.div>
+                )
             ) : (
               <div className="h-20" />
             )}

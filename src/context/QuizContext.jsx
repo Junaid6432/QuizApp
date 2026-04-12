@@ -41,53 +41,71 @@ export const QuizProvider = ({ children }) => {
   // Firebase Auth Listener
   useEffect(() => {
     if (!auth) {
+      console.warn("Auth not initialized, bypassing loading state");
       setIsLoadingAuth(false);
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setUser(firebaseUser);
-      if (firebaseUser) {
-        setRole('teacher');
-        try {
-          // Fetch profile details (especially EMIS Code)
-          const profile = await getTeacherProfile(firebaseUser.uid);
-          if (profile?.emisCode) {
-            setEmisCode(profile.emisCode);
-            localStorage.setItem('emisCode', profile.emisCode);
-          }
-        } catch (e) {
-          console.error("Error loading teacher profile", e);
-        }
-      } else {
-        setRole('student');
-        
-        // Check URL for direct access to teacher/login
-        const params = new URLSearchParams(window.location.search);
-        const mode = params.get('mode')?.toLowerCase();
-        const isAdmin = params.get('admin')?.toLowerCase() === 'true';
-        if (mode === 'teacher' || isAdmin) {
-          setGameState('login');
-        }
+    // Safety timeout: If Auth doesn't resolve in 5 seconds, proceed anyway
+    const safetyTimer = setTimeout(() => {
+      if (isLoadingAuth) {
+        console.warn("Auth initialization timed out, proceeding to student view");
+        setIsLoadingAuth(false);
       }
+    }, 5000);
 
-      // Automatic Redirection: If we are now logged in but still on login/signup pages, 
-      // OR if we are using the teacher/admin URL
-      setGameState(prev => {
-        const params = new URLSearchParams(window.location.search);
-        const mode = params.get('mode')?.toLowerCase();
-        const isAdmin = params.get('admin')?.toLowerCase() === 'true';
-
-        if (firebaseUser && (prev === 'login' || prev === 'signup' || mode === 'teacher' || isAdmin)) {
-          return 'dashboard';
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      console.log("Auth State Changed:", firebaseUser ? "Teacher Logged In" : "Student View");
+      setUser(firebaseUser);
+      
+      try {
+        if (firebaseUser) {
+          setRole('teacher');
+          // Fetch profile details (especially EMIS Code)
+          try {
+            const profile = await getTeacherProfile(firebaseUser.uid);
+            if (profile?.emisCode) {
+              setEmisCode(profile.emisCode);
+              localStorage.setItem('emisCode', profile.emisCode);
+            }
+          } catch (e) {
+            console.error("Error loading teacher profile", e);
+          }
+        } else {
+          setRole('student');
+          
+          // Check URL for direct access to teacher/login
+          const params = new URLSearchParams(window.location.search);
+          const mode = params.get('mode')?.toLowerCase();
+          const isAdmin = params.get('admin')?.toLowerCase() === 'true';
+          if (mode === 'teacher' || isAdmin) {
+            setGameState('login');
+          }
         }
-        return prev;
-      });
 
-      setIsLoadingAuth(false);
+        // Automatic Redirection logic
+        setGameState(prev => {
+          const params = new URLSearchParams(window.location.search);
+          const mode = params.get('mode')?.toLowerCase();
+          const isAdmin = params.get('admin')?.toLowerCase() === 'true';
+
+          if (firebaseUser && (prev === 'login' || prev === 'signup' || mode === 'teacher' || isAdmin)) {
+            return 'dashboard';
+          }
+          return prev;
+        });
+      } catch (err) {
+        console.error("Critical error in Auth Listener callback:", err);
+      } finally {
+        setIsLoadingAuth(false);
+        clearTimeout(safetyTimer);
+      }
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      clearTimeout(safetyTimer);
+    };
   }, []);
 
   const logout = useCallback(async () => {
@@ -123,14 +141,20 @@ export const QuizProvider = ({ children }) => {
 
   // Real-time Subscriptions
   useEffect(() => {
-    const unsubscribeQuizzes = subscribeToQuizzes((data) => {
+    const unsubscribeQuizzes = subscribeToQuizzes((data, error) => {
+      if (error) {
+        console.error("Quiz subscription error", error);
+      }
       // Manual sort as a workaround for missing Firestore indexes
       const sorted = [...data].sort((a, b) => (parseInt(a.order) || 0) - (parseInt(b.order) || 0));
       setQuizzes(sorted);
       setIsLoading(false);
     }, emisCode);
 
-    const unsubscribeAttempts = subscribeToAttempts((data) => {
+    const unsubscribeAttempts = subscribeToAttempts((data, error) => {
+      if (error) {
+        console.error("Attempts subscription error", error);
+      }
       // Sort by timestamp desc
       const sorted = [...data].sort((a, b) => {
         const timeA = a.timestamp?.seconds || 0;
