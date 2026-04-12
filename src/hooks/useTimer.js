@@ -1,3 +1,5 @@
+import { useState, useEffect, useRef, useCallback } from 'react';
+
 export const useTimer = (initialTime, onTimeUp, isActive) => {
   const [timeLeft, setTimeLeft] = useState(initialTime);
   const onTimeUpRef = useRef(onTimeUp);
