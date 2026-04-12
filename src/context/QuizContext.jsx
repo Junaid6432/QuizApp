@@ -6,6 +6,7 @@ import {
   deleteQuizFromDb, 
   subscribeToAttempts, 
   saveAttemptToDb,
+  deleteAttemptFromDb,
   saveStudentProfileToDb,
   getTeacherProfile 
 } from '../lib/firestore';
@@ -222,6 +223,12 @@ export const QuizProvider = ({ children }) => {
     await deleteQuizFromDb(id);
   }, []);
 
+  const deleteResults = useCallback(async (ids) => {
+    for (const id of ids) {
+      await deleteAttemptFromDb(id);
+    }
+  }, []);
+
   const toggleQuizActive = useCallback(async (id) => {
     const target = quizzes.find(q => q.id === id);
     if (!target) return;
@@ -338,6 +345,7 @@ export const QuizProvider = ({ children }) => {
     gameState, setGameState,
     isLoading,
     quizzes, addQuiz, updateQuiz, deleteQuiz, toggleQuizActive,
+    attempts, deleteResults,
     editQuizId, setEditQuizId,
     selectedUnit, setSelectedUnit,
     studentData, setStudentData,

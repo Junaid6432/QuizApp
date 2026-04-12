@@ -2,16 +2,49 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuiz } from '../context/QuizContext';
 import { CLASSES, getSubjectsByClass } from '../constants/collegeData';
-import { Trophy, ChevronLeft, Filter, Search, Award, Clock, Star } from 'lucide-react';
+import { Trophy, ChevronLeft, Filter, Search, Award, Clock, Star, Trash2, CheckSquare, Square } from 'lucide-react';
 
 const Leaderboard = () => {
-    const { role, attempts, setGameState, quizzes, studentData } = useQuiz();
+    const { role, attempts, setGameState, quizzes, studentData, deleteResults } = useQuiz();
     const [filters, setFilters] = useState({
         grade: studentData?.grade || '',
         subject: studentData?.subject || '',
         unit: '',
         topic: ''
     });
+
+    const [selectedIds, setSelectedIds] = useState([]);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const toggleSelect = (id) => {
+        setSelectedIds(prev => 
+            prev.includes(id) 
+                ? prev.filter(i => i !== id) 
+                : [...prev, id]
+        );
+    };
+
+    const toggleSelectAll = (results) => {
+        if (selectedIds.length === results.length) {
+            setSelectedIds([]);
+        } else {
+            setSelectedIds(results.map(r => r.id));
+        }
+    };
+
+    const handleDeleteSelected = async () => {
+        if (!window.confirm(`Are you sure you want to delete ${selectedIds.length} selected results? This cannot be undone.`)) return;
+        
+        setIsDeleting(true);
+        try {
+            await deleteResults(selectedIds);
+            setSelectedIds([]);
+        } catch (error) {
+            alert("Failed to delete records. Please try again.");
+        } finally {
+            setIsDeleting(false);
+        }
+    };
 
     const handleBack = () => {
         if (role === 'teacher') {
@@ -157,6 +190,36 @@ const Leaderboard = () => {
                         <Award className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 pointer-events-none" />
                     </div>
                 </div>
+
+                {/* Teacher Bulk Actions Area */}
+                {role === 'teacher' && (
+                    <div className="md:col-span-4 flex items-center justify-between bg-white/5 border border-white/10 rounded-2xl px-6 py-3 animate-in fade-in slide-in-from-top-4 duration-500">
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2 text-slate-400">
+                                <CheckSquare className="w-5 h-5 text-blue-500" />
+                                <span className="text-sm font-bold">{selectedIds.length} <span className="font-medium text-slate-500">records selected</span></span>
+                            </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-3">
+                            <button 
+                                onClick={() => setSelectedIds([])}
+                                disabled={selectedIds.length === 0}
+                                className="text-xs font-bold text-slate-500 hover:text-slate-300 transition-colors disabled:opacity-30"
+                            >
+                                Clear Selection
+                            </button>
+                            <button 
+                                onClick={handleDeleteSelected}
+                                disabled={selectedIds.length === 0 || isDeleting}
+                                className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 px-4 py-2 rounded-xl text-red-500 text-xs font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all disabled:opacity-30 disabled:hover:bg-red-500/10 disabled:hover:text-red-500"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                                {isDeleting ? 'Deleting...' : 'Delete Selected'}
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Results Table */}
@@ -165,6 +228,22 @@ const Leaderboard = () => {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-slate-800/30 border-b border-slate-800">
+                                {role === 'teacher' && (
+                                    <th className="px-6 py-5 w-12 text-center">
+                                        <button 
+                                            onClick={() => toggleSelectAll(filteredResults)}
+                                            className="w-5 h-5 rounded border border-slate-700 flex items-center justify-center transition-colors hover:border-blue-500"
+                                        >
+                                            <div className={`w-3 h-3 rounded-sm transition-all ${
+                                                selectedIds.length === filteredResults.length && filteredResults.length > 0
+                                                    ? 'bg-blue-500 scale-100' 
+                                                    : selectedIds.length > 0 
+                                                        ? 'bg-blue-500/40 scale-100' 
+                                                        : 'bg-transparent scale-0'
+                                            }`} />
+                                        </button>
+                                    </th>
+                                )}
                                 <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Rank</th>
                                 <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Student</th>
                                 <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest hidden md:table-cell">Roll No</th>
@@ -182,8 +261,22 @@ const Leaderboard = () => {
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, scale: 0.95 }}
                                         transition={{ delay: idx * 0.05 }}
-                                        className="hover:bg-white/[0.02] transition-colors group"
+                                        className={`hover:bg-white/[0.02] transition-colors group ${selectedIds.includes(res.id) ? 'bg-blue-500/5' : ''}`}
                                     >
+                                        {role === 'teacher' && (
+                                            <td className="px-6 py-6 text-center">
+                                                <button 
+                                                    onClick={() => toggleSelect(res.id)}
+                                                    className={`w-5 h-5 rounded border transition-all flex items-center justify-center ${
+                                                        selectedIds.includes(res.id) 
+                                                            ? 'border-blue-500 bg-blue-500 text-white' 
+                                                            : 'border-slate-700 hover:border-slate-500 bg-slate-900/50'
+                                                    }`}
+                                                >
+                                                    {selectedIds.includes(res.id) && <CheckSquare className="w-3.5 h-3.5" />}
+                                                </button>
+                                            </td>
+                                        )}
                                         <td className="px-8 py-6">
                                             <div className={`w-8 h-8 flex items-center justify-center rounded-lg font-black text-sm ${
                                                 idx === 0 ? 'bg-yellow-500/20 text-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.2)]' : 

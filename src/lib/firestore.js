@@ -135,6 +135,20 @@ export const saveAttemptToDb = async (attemptData) => {
 };
 
 /**
+ * Delete a quiz attempt
+ * @param {string} id 
+ */
+export const deleteAttemptFromDb = async (id) => {
+  if (!db) throw new Error("Database not connected");
+  try {
+    await deleteDoc(doc(db, "attempts", id));
+  } catch (error) {
+    console.error("Error deleting attempt: ", error);
+    throw error;
+  }
+};
+
+/**
  * Save or update student profile
  * @param {Object} studentData 
  */
