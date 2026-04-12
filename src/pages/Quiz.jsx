@@ -14,6 +14,7 @@ const Quiz = () => {
   const [selectedOption, setSelectedOption] = useState(null);
   const [showExitModal, setShowExitModal] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [isTimeout, setIsTimeout] = useState(false);
 
   // Handle hardware back button and browser back
   useEffect(() => {
@@ -45,22 +46,46 @@ const Quiz = () => {
 
   const onTimeUp = useCallback(() => {
     if (isTimerEnabled) {
-      alert("Time's up! Submitting your answers.");
+      alert("Whole Quiz Time's up! Submitting your results.");
       // Finalize the quiz immediately
       submitAnswer(selectedOption, 0); 
     }
   }, [isTimerEnabled, selectedOption, submitAnswer]);
 
-  const { timeLeft, resetTimer } = useTimer(initialTimeSeconds, onTimeUp, !showFeedback && isTimerEnabled);
+  const { timeLeft, resetTimer: resetGlobalTimer } = useTimer(initialTimeSeconds, onTimeUp, !showFeedback && isTimerEnabled);
+
+  // Per-Question Timer Logic
+  const isQuestionTimerEnabled = currentQuiz?.questionTimerEnabled;
+  const questionTimeLimit = parseInt(currentQuiz?.questionTimeLimit) || 30;
+
+  const onQuestionTimeUp = useCallback(() => {
+    if (isQuestionTimerEnabled && !showFeedback) {
+      setIsTimeout(true);
+      handleAnswer(null); // Trigger automatic wrong answer
+    }
+  }, [isQuestionTimerEnabled, showFeedback]);
+
+  const { timeLeft: qTimeLeft, resetTimer: resetQTimer } = useTimer(
+    questionTimeLimit, 
+    onQuestionTimeUp, 
+    !showFeedback && isQuestionTimerEnabled
+  );
+
+  // Reset question timer on index change
+  useEffect(() => {
+    if (isQuestionTimerEnabled) {
+      resetQTimer(questionTimeLimit);
+      setIsTimeout(false);
+    }
+  }, [currentIndex, isQuestionTimerEnabled, resetQTimer, questionTimeLimit]);
 
   const handleAnswer = (option) => {
-    if (showFeedback || !currentQuestion) return;
+    if (showFeedback || (!currentQuestion && option !== null)) return;
     
     setSelectedOption(option);
     setShowFeedback(true);
     
-    // We don't use per-question time anymore, so we pass 0 or a dummy value
-    const timeTaken = 0; 
+    const timeTaken = option === null ? questionTimeLimit : (questionTimeLimit - qTimeLeft); 
     const isCorrect = option === currentQuestion.answer;
     
     if (isCorrect) playCorrect();
@@ -70,6 +95,7 @@ const Quiz = () => {
       submitAnswer(option, timeTaken);
       setSelectedOption(null);
       setShowFeedback(false);
+      setIsTimeout(false);
     }, 1500);
   };
 
@@ -117,6 +143,26 @@ const Quiz = () => {
             <Timer className="w-5 h-5 text-primary-400" />
             <span className="text-white font-bold text-lg">Score: {score}</span>
           </div>
+          
+          {/* Question Timer (Secondary) */}
+          {isQuestionTimerEnabled && (
+            <div className="glass-panel px-4 py-3 flex items-center gap-3 border-cyan-500/30">
+              <div className="relative w-8 h-8 flex items-center justify-center">
+                <svg className="w-full h-full -rotate-90">
+                  <circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" strokeWidth="3" className="text-white/10" />
+                  <circle 
+                    cx="16" cy="16" r="14" fill="none" stroke="currentColor" strokeWidth="3" 
+                    className="text-cyan-500 transition-all duration-1000"
+                    strokeDasharray={88}
+                    strokeDashoffset={88 - (88 * qTimeLeft) / questionTimeLimit}
+                  />
+                </svg>
+                <span className="absolute text-[10px] font-bold text-white">{qTimeLeft}</span>
+              </div>
+              <span className="text-white/60 text-[10px] font-black uppercase tracking-widest hidden md:block">Time Left</span>
+            </div>
+          )}
+
           <button 
             onClick={() => setShowExitModal(true)}
             title="Exit Quiz"
@@ -126,6 +172,17 @@ const Quiz = () => {
           </button>
         </div>
       </div>
+
+      {/* Per-Question Progress Bar (Mobile/Bottom) */}
+      {isQuestionTimerEnabled && (
+        <div className="w-full max-w-4xl h-1 bg-white/5 mb-4 rounded-full overflow-hidden">
+          <motion.div 
+            initial={false}
+            animate={{ width: `${(qTimeLeft / questionTimeLimit) * 100}%` }}
+            className={`h-full ${qTimeLeft < 5 ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.5)]'}`}
+          />
+        </div>
+      )}
 
       <AnimatePresence mode="wait">
         <motion.div
@@ -139,6 +196,16 @@ const Quiz = () => {
             <div className="absolute top-0 left-0 w-2 h-full bg-primary-500/30" />
             
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-10 leading-tight">
+              {isTimeout && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -10 }} 
+                  animate={{ opacity: 1, y: 0 }} 
+                  className="mb-4 inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-red-500/20 border border-red-500/30 text-red-500 text-xs font-black uppercase tracking-widest"
+                >
+                  <AlertTriangle className="w-3 h-3" />
+                  Time's Up!
+                </motion.div>
+              )}
               <MathText text={currentQuestion.question} />
             </h2>
 

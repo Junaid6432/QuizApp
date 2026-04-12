@@ -7,20 +7,41 @@ import { Trophy, Compass, CheckCircle2, AlertCircle, Users, GraduationCap, Zap, 
 import { CLASSES, getSubjectsByClass } from '../constants/collegeData';
 
 const Home = () => {
-  const { quizzes, setGameState, setSelectedUnit, attempts, studentData, isLoading, isFirebaseConfigured } = useQuiz();
+  const { quizzes, setGameState, setSelectedUnit, attempts, studentData, isLoading, isFirebaseConfigured, setStudentData } = useQuiz();
 
 
-  const [selection, setSelection] = useState({ class: '', subject: '' });
+  const [selection, setSelection] = useState(() => {
+    try {
+      const saved = localStorage.getItem('home_selection');
+      return saved ? JSON.parse(saved) : { class: '', subject: '' };
+    } catch (e) {
+      return { class: '', subject: '' };
+    }
+  });
 
   // Sync selection with student data on mount/change
   useEffect(() => {
-    if (studentData) {
+    if (studentData && !selection.class) {
       setSelection({
         class: studentData.grade || '',
         subject: studentData.subject || ''
       });
     }
   }, [studentData]);
+
+  // Persist and Sync back to StudentData
+  useEffect(() => {
+    localStorage.setItem('home_selection', JSON.stringify(selection));
+    
+    // Also sync to global context if it's different
+    if (selection.class && (studentData?.grade !== selection.class || studentData?.subject !== selection.subject)) {
+       setStudentData(prev => ({
+         ...prev,
+         grade: selection.class,
+         subject: selection.subject
+       }));
+    }
+  }, [selection, studentData, setStudentData]);
 
   // Standard classes and dynamic subjects
   const availableClasses = CLASSES;

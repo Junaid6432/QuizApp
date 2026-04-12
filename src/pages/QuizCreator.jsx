@@ -13,16 +13,40 @@ const QuizCreator = () => {
     quizzes, editQuizId, setEditQuizId, 
     setGameState 
   } = useQuiz();
-  const [metadata, setMetadata] = useState({ 
-    class: '', 
-    subject: '', 
-    unit: '', 
-    topicName: '',
-    order: '',
-    questionLimit: '',
-    timerEnabled: false,
-    timeLimit: ''
+  const [metadata, setMetadata] = useState(() => {
+    let initialClass = '';
+    let initialSubject = '';
+    
+    try {
+      const saved = localStorage.getItem('teacher_filters');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        initialClass = parsed.class || '';
+        initialSubject = parsed.subject || '';
+      }
+    } catch (e) {}
+
+    return { 
+      class: initialClass, 
+      subject: initialSubject, 
+      unit: '', 
+      topicName: '',
+      order: '',
+      questionLimit: '',
+      timerEnabled: false,
+      timeLimit: '',
+      questionTimerEnabled: false,
+      questionTimeLimit: '30'
+    };
   });
+
+  // Sync back to local storage when class/subject changes during creation
+  React.useEffect(() => {
+    if (!editQuizId) {
+      const currentFilters = { class: metadata.class, subject: metadata.subject };
+      localStorage.setItem('teacher_filters', JSON.stringify(currentFilters));
+    }
+  }, [metadata.class, metadata.subject, editQuizId]);
   const [questions, setQuestions] = useState([]);
   const [error, setError] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -39,7 +63,11 @@ const QuizCreator = () => {
           unit: quizToEdit.unit,
           topicName: quizToEdit.topicName || '',
           order: quizToEdit.order || '',
-          questionLimit: quizToEdit.questionLimit || ''
+          questionLimit: quizToEdit.questionLimit || '',
+          timerEnabled: quizToEdit.timerEnabled || false,
+          timeLimit: quizToEdit.timeLimit || '',
+          questionTimerEnabled: quizToEdit.questionTimerEnabled || false,
+          questionTimeLimit: quizToEdit.questionTimeLimit || '30'
         });
         setQuestions(quizToEdit.questions);
       }
@@ -244,6 +272,33 @@ const QuizCreator = () => {
                         value={metadata.timeLimit}
                         onChange={(e) => setMetadata({...metadata, timeLimit: e.target.value})}
                         className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary-500 transition-colors outline-none"
+                      />
+                    </motion.div>
+                  )}
+
+                  {/* Per-Question Timer Controls */}
+                  <div className="pt-4 border-t border-white/5 flex items-center justify-between">
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 uppercase block tracking-wider">Per-Question Timer</label>
+                      <p className="text-[10px] text-slate-500 italic">Auto-fail question if time runs out</p>
+                    </div>
+                    <button 
+                      onClick={() => setMetadata({...metadata, questionTimerEnabled: !metadata.questionTimerEnabled})}
+                      className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 ${metadata.questionTimerEnabled ? 'bg-cyan-600' : 'bg-slate-700'}`}
+                    >
+                      <div className={`w-4 h-4 bg-white rounded-full transition-transform duration-300 ${metadata.questionTimerEnabled ? 'translate-x-6' : 'translate-x-0'}`} />
+                    </button>
+                  </div>
+
+                  {metadata.questionTimerEnabled && (
+                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
+                      <label className="text-xs font-bold text-slate-500 uppercase mb-2 block tracking-wider">Seconds Per Question</label>
+                      <input 
+                        type="number" 
+                        placeholder="e.g. 30"
+                        value={metadata.questionTimeLimit}
+                        onChange={(e) => setMetadata({...metadata, questionTimeLimit: e.target.value})}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-cyan-500 transition-colors outline-none"
                       />
                     </motion.div>
                   )}

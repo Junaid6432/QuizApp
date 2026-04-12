@@ -14,7 +14,19 @@ const TeacherDashboard = () => {
   } = useQuiz();
 
 
-  const [filter, setFilter] = useState({ class: '', subject: '' });
+  const [filter, setFilter] = useState(() => {
+    try {
+      const saved = localStorage.getItem('teacher_filters');
+      return saved ? JSON.parse(saved) : { class: '', subject: '' };
+    } catch (e) {
+      return { class: '', subject: '' };
+    }
+  });
+
+  // Persist filters
+  React.useEffect(() => {
+    localStorage.setItem('teacher_filters', JSON.stringify(filter));
+  }, [filter]);
 
   const handleEdit = (quiz) => {
     setEditQuizId(quiz.id);
