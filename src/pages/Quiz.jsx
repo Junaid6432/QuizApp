@@ -79,14 +79,21 @@ const Quiz = () => {
     }
   }, [currentIndex, isQuestionTimerEnabled, resetQTimer, questionTimeLimit]);
 
-  const handleAnswer = (option) => {
+  // Use a ref to keep handleAnswer stable while still having access to latest qTimeLeft
+  const qTimeLeftRef = useRef(qTimeLeft);
+  useEffect(() => {
+    qTimeLeftRef.current = qTimeLeft;
+  }, [qTimeLeft]);
+
+  const handleAnswer = useCallback((option) => {
     if (showFeedback || (!currentQuestion && option !== null)) return;
     
     setSelectedOption(option);
     setShowFeedback(true);
     
-    const timeTaken = option === null ? questionTimeLimit : (questionTimeLimit - qTimeLeft); 
-    const isCorrect = option === currentQuestion.answer;
+    const latestQTime = qTimeLeftRef.current;
+    const timeTaken = option === null ? questionTimeLimit : (questionTimeLimit - latestQTime); 
+    const isCorrect = option === currentQuestion?.answer;
     
     if (isCorrect) playCorrect();
     else playWrong();
@@ -97,7 +104,7 @@ const Quiz = () => {
       setShowFeedback(false);
       setIsTimeout(false);
     }, 1500);
-  };
+  }, [showFeedback, currentQuestion, questionTimeLimit, playCorrect, playWrong, submitAnswer]);
 
   // Keyboard controls
   useEffect(() => {
