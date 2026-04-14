@@ -17,6 +17,7 @@ const StudentEntry = lazy(() => import('./pages/StudentEntry'));
 const Leaderboard = lazy(() => import('./pages/Leaderboard'));
 const Login = lazy(() => import('./pages/Login'));
 const Signup = lazy(() => import('./pages/Signup'));
+const TeacherProfile = lazy(() => import('./pages/TeacherProfile'));
 
 
 
@@ -53,6 +54,7 @@ const Layout = () => {
     
     if (gameState === 'student-entry') return <StudentEntry />;
     if (gameState === 'leaderboard') return <Leaderboard />;
+    if (gameState === 'profile') return <TeacherProfile />;
     
     return <Home />;
   };

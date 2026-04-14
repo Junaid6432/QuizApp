@@ -37,6 +37,7 @@ export const QuizProvider = ({ children }) => {
   }); 
 
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const [teacherProfile, setTeacherProfile] = useState(null);
   const [emisCode, setEmisCode] = useState(() => localStorage.getItem('emisCode') || 'GPSK001');
 
   // Firebase Auth Listener
@@ -65,15 +66,19 @@ export const QuizProvider = ({ children }) => {
           // Fetch profile details (especially EMIS Code)
           try {
             const profile = await getTeacherProfile(firebaseUser.uid);
-            if (profile?.emisCode) {
-              setEmisCode(profile.emisCode);
-              localStorage.setItem('emisCode', profile.emisCode);
+            if (profile) {
+              setTeacherProfile(profile);
+              if (profile.emisCode) {
+                setEmisCode(profile.emisCode);
+                localStorage.setItem('emisCode', profile.emisCode);
+              }
             }
           } catch (e) {
             console.error("Error loading teacher profile", e);
           }
         } else {
           setRole('student');
+          setTeacherProfile(null);
           
           // Check URL for direct access to teacher/login
           const params = new URLSearchParams(window.location.search);
@@ -253,6 +258,21 @@ export const QuizProvider = ({ children }) => {
     await updateQuizInDb(id, { isActive: newState });
   }, [quizzes]);
 
+  const updateProfile = useCallback(async (updatedData) => {
+    if (!user) return;
+    try {
+      await saveTeacherProfileToDb(user.uid, updatedData);
+      setTeacherProfile(prev => ({ ...prev, ...updatedData }));
+      if (updatedData.emisCode) {
+        setEmisCode(updatedData.emisCode);
+        localStorage.setItem('emisCode', updatedData.emisCode);
+      }
+    } catch (error) {
+      console.error("Error updating profile", error);
+      throw error;
+    }
+  }, [user]);
+
 
   // Student Actions
   const startQuiz = useCallback((quiz) => {
@@ -346,6 +366,7 @@ export const QuizProvider = ({ children }) => {
     isLoading,
     quizzes, addQuiz, updateQuiz, deleteQuiz, toggleQuizActive,
     attempts, deleteResults,
+    teacherProfile, updateProfile,
     editQuizId, setEditQuizId,
     selectedUnit, setSelectedUnit,
     studentData, setStudentData,

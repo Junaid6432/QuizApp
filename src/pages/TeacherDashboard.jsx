@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuiz } from '../context/QuizContext';
-import { Plus, Trash2, Edit2, Power, ClipboardList, TrendingUp, ChevronRight, ArrowLeft, Trophy, Users, School, Hash, CheckSquare, Square, FolderTree } from 'lucide-react';
+import { Plus, Trash2, Edit2, Power, ClipboardList, TrendingUp, ChevronRight, ArrowLeft, Trophy, Users, School, Hash, CheckSquare, Square, FolderTree, Settings } from 'lucide-react';
 import { CLASSES, BASE_SUBJECTS, HIGH_SCHOOL_SUBJECTS, getSubjectsByClass } from '../constants/collegeData';
 import GlassCard from '../components/ui/GlassCard';
 import Button from '../components/ui/Button';
@@ -124,6 +124,14 @@ const TeacherDashboard = () => {
           >
             <Trophy className="w-5 h-5 text-yellow-500" />
             Rankings
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => setGameState('profile')} 
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 py-3 px-6 border-white/10 hover:border-white/20"
+          >
+            <Settings className="w-5 h-5 text-blue-500" />
+            My Profile
           </Button>
           <Button onClick={() => setGameState('create-quiz')} className="flex-1 md:flex-none flex items-center justify-center gap-2 py-3 px-6 shadow-xl">
             <Plus className="w-5 h-5" />
