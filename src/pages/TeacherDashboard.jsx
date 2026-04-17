@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuiz } from '../context/QuizContext';
-import { Plus, Trash2, Edit2, Power, ClipboardList, TrendingUp, ChevronRight, ArrowLeft, Trophy, Users, School, Hash, CheckSquare, Square, FolderTree, Settings } from 'lucide-react';
+import { Plus, Trash2, Edit2, Power, ClipboardList, TrendingUp, ChevronRight, ArrowLeft, Trophy, Users, School, Hash, CheckSquare, Square, FolderTree, Settings, Check, X } from 'lucide-react';
 import { CLASSES, BASE_SUBJECTS, HIGH_SCHOOL_SUBJECTS, getSubjectsByClass } from '../constants/collegeData';
 import GlassCard from '../components/ui/GlassCard';
 import Button from '../components/ui/Button';
@@ -10,7 +10,8 @@ const TeacherDashboard = () => {
   const { 
     quizzes, toggleQuizActive, deleteQuiz, 
     setGameState, setRole, attempts,
-    setEditQuizId, isLoading, emisCode
+    setEditQuizId, isLoading, emisCode,
+    renameUnit, updateQuiz
   } = useQuiz();
 
 
@@ -24,6 +25,8 @@ const TeacherDashboard = () => {
   });
 
   const [expandedUnits, setExpandedUnits] = useState([]);
+  const [editingId, setEditingId] = useState(null); // 'unit:unitName' or 'topic:quizId'
+  const [editValue, setEditValue] = useState('');
 
   const toggleUnitExpand = (unitName) => {
     setExpandedUnits(prev => 
@@ -91,6 +94,37 @@ const TeacherDashboard = () => {
         await toggleQuizActive(quiz.id);
       }
     }
+  };
+
+  const startEditingUnit = (e, name) => {
+    e.stopPropagation();
+    setEditingId(`unit:${name}`);
+    setEditValue(name);
+  };
+
+  const startEditingTopic = (e, quiz) => {
+    e.stopPropagation();
+    setEditingId(`topic:${quiz.id}`);
+    setEditValue(quiz.topicName || 'General Assessment');
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setEditValue('');
+  };
+
+  const handleSaveUnit = async (oldName) => {
+    if (editValue.trim() && editValue !== oldName) {
+      await renameUnit(oldName, editValue.trim(), filter.class, filter.subject);
+    }
+    cancelEditing();
+  };
+
+  const handleSaveTopic = async (quizId) => {
+    if (editValue.trim()) {
+      await updateQuiz(quizId, { topicName: editValue.trim() });
+    }
+    cancelEditing();
   };
 
   return (
@@ -243,15 +277,46 @@ const TeacherDashboard = () => {
                         >
                           <ChevronRight className="w-5 h-5" />
                         </motion.div>
-                        <div className="flex items-center gap-3">
-                          <div className="p-1.5 bg-blue-500/20 rounded-lg">
-                            <FolderTree className="w-4 h-4 text-blue-400" />
+                          <div className="flex items-center gap-3">
+                            <div className="p-1.5 bg-blue-500/20 rounded-lg">
+                              <FolderTree className="w-4 h-4 text-blue-400" />
+                            </div>
+                            
+                            {editingId === `unit:${unitName}` ? (
+                              <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                                <input
+                                  autoFocus
+                                  type="text"
+                                  value={editValue}
+                                  onChange={(e) => setEditValue(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleSaveUnit(unitName);
+                                    if (e.key === 'Escape') cancelEditing();
+                                  }}
+                                  className="bg-slate-800 border-2 border-primary-500 rounded-lg px-3 py-1 text-sm font-bold text-white outline-none w-64"
+                                />
+                                <button onClick={() => handleSaveUnit(unitName)} className="p-1 px-1.5 bg-emerald-500 rounded-lg text-white hover:bg-emerald-600">
+                                  <Check className="w-4 h-4" />
+                                </button>
+                                <button onClick={cancelEditing} className="p-1 px-1.5 bg-slate-700 rounded-lg text-slate-400 hover:bg-slate-600">
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-3 group/title">
+                                <span className="text-base font-black text-white tracking-wide uppercase">{unitName}</span>
+                                <button 
+                                  onClick={(e) => startEditingUnit(e, unitName)}
+                                  className="opacity-0 group-hover/header:opacity-100 group-hover/title:scale-110 transition-all p-1 text-slate-500 hover:text-primary-400"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                </button>
+                                <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-md font-bold">
+                                  {unitQuizzes.length} TOPICS
+                                </span>
+                              </div>
+                            )}
                           </div>
-                          <span className="text-base font-black text-white tracking-wide uppercase">{unitName}</span>
-                          <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-md font-bold">
-                            {unitQuizzes.length} TOPICS
-                          </span>
-                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -299,7 +364,37 @@ const TeacherDashboard = () => {
                                 <span className="text-white group-hover:text-primary-400 transition-colors uppercase tracking-tight">{quiz.subject}</span>
                                 {quiz.isActive && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />}
                               </div>
-                              <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest truncate">{quiz.topicName || 'General Assessment'}</div>
+                              {editingId === `topic:${quiz.id}` ? (
+                                <div className="flex items-center gap-2 mt-1" onClick={e => e.stopPropagation()}>
+                                  <input
+                                    autoFocus
+                                    type="text"
+                                    value={editValue}
+                                    onChange={(e) => setEditValue(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') handleSaveTopic(quiz.id);
+                                      if (e.key === 'Escape') cancelEditing();
+                                    }}
+                                    className="bg-slate-800 border-2 border-primary-500 rounded-lg px-2 py-0.5 text-[10px] font-bold text-white outline-none w-48 uppercase"
+                                  />
+                                  <button onClick={() => handleSaveTopic(quiz.id)} className="p-0.5 bg-emerald-500 rounded text-white hover:bg-emerald-600">
+                                    <Check className="w-3 h-3" />
+                                  </button>
+                                  <button onClick={cancelEditing} className="p-0.5 bg-slate-700 rounded text-slate-400 hover:bg-slate-600">
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2 group/topic">
+                                  <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest truncate">{quiz.topicName || 'General Assessment'}</div>
+                                  <button 
+                                    onClick={(e) => startEditingTopic(e, quiz)}
+                                    className="opacity-0 group-hover:opacity-100 group-hover/topic:scale-110 transition-all p-1 text-slate-600 hover:text-primary-400"
+                                  >
+                                    <Edit2 className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </td>

@@ -228,6 +228,18 @@ export const QuizProvider = ({ children }) => {
     await deleteQuizFromDb(id);
   }, []);
 
+  const renameUnit = useCallback(async (oldName, newName, className, subjectName) => {
+    const quizzesToUpdate = quizzes.filter(q => 
+      q.unit === oldName && 
+      q.class === className && 
+      q.subject === subjectName
+    );
+    
+    for (const quiz of quizzesToUpdate) {
+      await updateQuizInDb(quiz.id, { unit: newName });
+    }
+  }, [quizzes]);
+
   const deleteResults = useCallback(async (ids) => {
     for (const id of ids) {
       await deleteAttemptFromDb(id);
@@ -364,7 +376,7 @@ export const QuizProvider = ({ children }) => {
     user, logout, isLoadingAuth, emisCode, setEmisCode, isFirebaseConfigured,
     gameState, setGameState,
     isLoading,
-    quizzes, addQuiz, updateQuiz, deleteQuiz, toggleQuizActive,
+    quizzes, addQuiz, updateQuiz, deleteQuiz, toggleQuizActive, renameUnit,
     attempts, deleteResults,
     teacherProfile, updateProfile,
     editQuizId, setEditQuizId,
